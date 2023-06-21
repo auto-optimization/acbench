@@ -1,0 +1,2 @@
+algorithm  ants alpha beta rho  q0 nnants localsearch  nnls dlb rasrank elitistants pdec phlimits schedulelen xi restart   restart_branching_factor restart_avg_distance restart_min_iterations
+"mmas"     25    1    2    0.2  0  20     3            20   1   NA      NA          NA   1        250         NA "branch-factor" 1.00001                NA                   250              

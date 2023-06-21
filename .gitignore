@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+instances/qap/RS
+instances/tsp/tsp-rue-2000/train/
+instances/tsp/tsp-rue-2000/test/
+.future/
+execdir/
+install/
+

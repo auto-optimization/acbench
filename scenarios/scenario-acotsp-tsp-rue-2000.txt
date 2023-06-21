@@ -6,17 +6,18 @@
 ## value on the command line).
 
 ## File that contains the description of the parameters.
-parameterFile = "./parameters-acotsp.txt"
+parameterFile = "../algorithms/acotspqap/parameters-acotsp.txt"
 
-## Directory where the programs will be run.
-execDir = "./execdir"
+## Executable called for each configuration that executes the target algorithm
+## to be tuned. See the templates and examples provided.
+targetRunner = "../algorithms/acotspqap/target-runner-acotsp"
 
 ## Directory where tuning instances are located, either absolute path or
 ## relative to current directory.
 # Download the instances from: http://iridia.ulb.ac.be/irace/files/tsp-instances-training.tar.bz2
-trainInstancesDir = "./Instances/train/"
+trainInstancesDir = "../instances/tsp/tsp-rue-2000/train/"
 # Download the instances from: http://iridia.ulb.ac.be/irace/files/tsp-instances-testing.tar.bz2
-testInstancesDir = "./Instances/test/"
+testInstancesDir = "../instances/tsp/tsp-rue-2000/test/"
 
 ## The maximum number of runs (invocations of targetRunner) that will
 ## performed. It determines the (maximum) budget of experiments for the tuning.
@@ -25,10 +26,6 @@ maxExperiments = 5000
 ## Indicates the number of decimal places to be considered for the
 ## real parameters.
 digits = 4
-
-## A value of 0 silences all debug messages. Higher values provide
-## more verbose debug messages.
-debugLevel = 3
 
 ## END of scenario file
 ############################################################################
