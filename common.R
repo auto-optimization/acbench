@@ -1,14 +1,26 @@
-library(fs, quiet = TRUE)
 library(devtools, quiet = TRUE)
-library(cli, quiet = TRUE)
-library(data.table, quiet = TRUE)
-library(future.apply, quiet = TRUE)
-library(irace)
+
+require_or_install <- function(package)
+{
+ package <- as.character(substitute(package))
+ if (!require(package, quiet = TRUE, character.only = TRUE)) {
+     devtools::install_cran(package, upgrade = "never")
+     require(package, quiet = TRUE, character.only = TRUE)
+ }
+}
+
+require_or_install(fs)
+require_or_install(cli)
+require_or_install(data.table)
+# Debugging:
+require_or_install(debugme)
+Sys.setenv(DEBUGME = "batchtools")
+#options(future.debug = TRUE)
 
 install_irace <- function(install_dir, version, reinstall = FALSE)
 {
   lib <- file.path(install_dir, paste0("irace_", version))
-  if (reinstall || !fs::file_exists(lib)) {
+  if (reinstall || !fs::file_exists(file.path(lib, "irace", "bin"))) {
     fs::dir_create(lib)
     if (version == "git") {
       devtools::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib)
@@ -26,6 +38,17 @@ get_installed_irace <- function(install_dir, version)
   if (!fs::file_access(exe, mode = "execute"))
     cli_abort("Executable {.filename {exe}} not found or not executable ")
   exe
+}
+
+sge_run_irace <- function(exe, scenario_file, exec_dir, run, jobname, ncpus)
+{
+	require_or_install(brew)
+outfile <- fs::path_abs(file.path(exec_dir, paste0(jobname, ".log")))
+	launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
+brew("launch_sge.tmpl", output = launch_file)
+fs::file_chmod(launch_file, "u+x")
+   system2(launch_file, args = c(exe, "-s", scenario_file, "--exec-dir", exec_dir, "--seed", 42 + run, "--parallel", ncpus), stdout = "", stderr = "")
+fs::file_delete(launch_file)
 }
 
 run_irace <- function(exe, scenario_file, exec_dir, run)
@@ -57,11 +80,25 @@ find_scenario <- function(scenario_name)
   scenario
 }
 
+setup_scenario <- function(scenario_name)
+{
+  scenario <- find_scenario(scenario_name)
+  system2(file.path("./setups", paste0(scenario_name, ".sh")), 
+  stdout = "", stderr = "", timeout = 120)
+  scenario
+}
+
+make_jobname <- function(scenario_name, tuner, tuner_version, rep)
+ sprintf("%s_%s-%s-%02d", tuner, tuner_version, scenario_name, rep)
+
+make_execdir_name <- function(exec_dir, scenario_name, tuner, tuner_version, rep)
+ file.path(exec_dir, scenario_name, sprintf("%s_%s-%02d", tuner, tuner_version, rep))
+
 run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_version, nreps)
 {
   reps <- seq_len(nreps)
-  exec_dir <- sapply(reps, function(r) {
-    d <- file.path(exec_dir, scenario_name, sprintf("%s_%s-%02d", tuner, tuner_version, r))
+  exec_dirs <- sapply(reps, function(r) {
+    d <- make_execdir_name(exec_dir, scenario_name, tuner, tuner_version, r)
     if (fs::file_exists(d)) {
       fs::dir_delete(d)
     }
@@ -69,8 +106,20 @@ run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_vers
     d
   })
   exe <- get_tuner_executable(install_dir, tuner, tuner_version)
-  scenario <- find_scenario(scenario_name)
-  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dir, run = reps)
+  scenario <- setup_scenario(scenario_name)
+  cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, {nreps} times")
+  mapply(sge_run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
+  			jobname = make_jobname(scenario_name, tuner, tuner_version, reps),
+			ncpus = 12)
+    #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
+  #        future.label = paste0(tuner, "_", tuner_version, "-", scenario_name, "-%d"),
+#	  future.conditions = NULL)
+# ids <- batchtools::batchMap(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps)
+# batchtools::setJobNames(ids, names = paste0(tuner, "_", tuner_version, "-", scenario_name, "-", reps))
+#         ncpus <- 12
+#     	cpu <- "haswell"
+# batchtools::submitJobs(resources = list(cpu=cpu, ncpus=ncpus))
+# batchtools::waitForJobs()
 }
 
 read_configurations <- function(scenario_name, file = "best_confs.rds",
@@ -85,7 +134,7 @@ read_configurations <- function(scenario_name, file = "best_confs.rds",
 
 run_test <- function(scenario_name, install_dir, exec_dir, tuner, tuner_version, reps)
 {
-  exec_dir <- file.path(exec_dir, scenario_name, sprintf("%s_%s-%02d", tuner, tuner_version, reps))
+  exec_dir <- make_execdir_name(exec_dir, scenario_name, tuner, tuner_version, reps)
   exe <- get_tuner_executable(install_dir, tuner, tuner_version)
   scenario <- find_scenario(scenario_name)
   confs <- read_configurations(scenario_name, metadata = FALSE)
@@ -104,7 +153,7 @@ read_completed_logfile <- function(p)
 {
   p <- file.path(p, "irace.Rdata")
   if (!fs::file_exists(p)) cli_abort("File {.filename {p}} not found !")
-  res <- read_logfile(p)
+  res <- irace::read_logfile(p)
   if (!is.null(res$state$completed) && res$state$completed == "Incomplete")
     cli_abort("File {.filename {p}} does not contain a completed irace run !")
   res
@@ -112,12 +161,14 @@ read_completed_logfile <- function(p)
 
 get_best_configuration <- function(p)
 {
+  require_or_install(irace)
   res <- read_completed_logfile(p)
   irace::getFinalElites(res, n=1, drop.metadata = TRUE)
 }
 
 get_irace_test_results <- function(p)
 {
+  require_or_install(irace)
   res <- read_completed_logfile(p)
   if (!irace::has_testing_data(res))
     cli_abort("File {.filename {p}} does not contain testing data !")
@@ -180,12 +231,31 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 
 setup_future_plan <- function(cluster = FALSE)
 {
+ require_or_install(future.apply)
+
   if (cluster) {
-    library(future.batchtools, quiet = TRUE)
-    future::plan(batchtools_sge, template = "./batchtools.sge.tmpl",
-                 resources = list(cpu="haswell", numcores=12))
+    #require_or_install(future.batchtools)
+    ncpus <- 12
+    cpu <- "haswell"
+#    future::plan(batchtools_sge, template = "./batchtools.sge.tmpl",
+#                 resources = list(cpu=cpu, ncpus=ncpus),
+# https://github.com/HenrikBengtsson/future.batchtools/issues/68
+# finalize=FALSE)
+#    cli_inform("batchtools_sge plan setup completed with {.var {ncpus}} cpus of type {.var {cpu}}")
+# require_or_install(batchtools)
+# d <- "~/scratch/execdir/registry"
+#     if (fs::file_exists(d)) {
+#       fs::dir_delete(d)
+#     }
+# reg <- batchtools::makeRegistry(file.dir=d)
+# reg$cluster.functions <- batchtools::makeClusterFunctionsSGE(template = "./batchtools.sge.tmpl")
+# setDefaultRegistry(reg)
+
+    
   } else {
     Sys.setenv(PROCESSX_NOTIFY_OLD_SIGCHLD="true") # https://github.com/r-lib/processx/issues/236
-    future::plan(multicore, workers = 4)
+    ncpus <- 4
+    future::plan(multicore, workers = ncpus)
+    cli_inform("multicore plan setup completed with {.var {ncpus}} cpus")
   }
 }

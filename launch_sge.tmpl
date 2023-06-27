@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+set -o pipefail
+qsub <<EOF
+#!/bin/bash --login
+# -t 1-1
+#$ -N <%=jobname %>
+#$ -pe smp.pe <%=ncpus %>
+#$ -l haswell
+#$ -M manuel.lopez-ibanez@manchester.ac.uk
+#$ -m as
+#     b     Mail is sent at the beginning of the job.
+#     e     Mail is sent at the end of the job.
+#     a     Mail is sent when the job is aborted or rescheduled.
+#     s     Mail is sent when the job is suspended.
+#
+#$ -o <%=outfile %>
+#$ -j y
+#$ -cwd
+## Use environment variables
+#$ -V
+module load apps/gcc/R/4.0.2
+#run=\$SGE_TASK_ID
+echo "running: \$JOB_NAME: $@"
+$@
+EOF

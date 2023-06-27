@@ -1,6 +1,6 @@
 #!/bin/bash --login
-#$ -pe smp.pe <%= numcores %>        # Choose a PE name from the tables below and a number of cores
-#$ -l <%= resources %>
+#$ -pe smp.pe <%= resources$ncpus %>        # Choose a PE name from the tables below and a number of cores
+#$ -l <%= resources$cpu %>
 
 ## The name of the job, can be anything, simply used when displaying the list of running jobs
 #$ -N <%= job.name %>
@@ -11,6 +11,13 @@
 ## Giving the name of the output log file
 #$ -o <%= log.file %>
 
+#$ -M manuel.lopez-ibanez@manchester.ac.uk
+#$ -m ase
+#      b     Mail is sent at the beginning of the job.
+#      e     Mail is sent at the end of the job.
+#      a     Mail is sent when the job is aborted or rescheduled.
+#      s     Mail is sent when the job is suspended.
+#
 ## One needs to tell the queue system to use the current directory as the working directory
 ## Or else the script may fail as it will execute in your top level home directory /home/username
 #$ -cwd
@@ -24,6 +31,7 @@ export DEBUGME=<%= Sys.getenv("DEBUGME") %>
 <%= sprintf("export OMP_NUM_THREADS=%i", resources$omp.threads) -%>
 <%= sprintf("export OPENBLAS_NUM_THREADS=%i", resources$blas.threads) -%>
 <%= sprintf("export MKL_NUM_THREADS=%i", resources$blas.threads) -%>
-
+module load apps/gcc/R/4.0.2
+echo "running: <%= uri %> <%= job.name %> <%= resources$numcores %> <%= resources$cpu %>  <%= log.file %>"
 Rscript -e 'batchtools::doJobCollection("<%= uri %>")'
 exit 0

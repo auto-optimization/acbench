@@ -33,7 +33,7 @@ CONFIG_PARAMS=$*
 ## Find our own location.
 BINDIR=$(dirname "$(readlink -f $0)")
 EXE=${BINDIR}/acotsp
-EXE_PARAMS="--time 60 --tries 1 --quiet -i $INSTANCE --seed $SEED ${CONFIG_PARAMS}"
+EXE_PARAMS="--time 30 --tries 1 --quiet -i $INSTANCE --seed $SEED ${CONFIG_PARAMS}"
 
 if [ ! -x "$(command -v ${EXE})" ]; then
     error "${EXE}: not found or not executable (pwd: $(pwd))"

@@ -1,13 +1,13 @@
 source("common.R")
 scenarios_file <- "scenarios.txt"
 scenarios <- read_scenarios_file(scenarios_file)
-exec_dir <- "./execdir"
-install_dir <- "./install/"
+exec_dir <- "~/scratch/execdir"
+install_dir <- "~/scratch/install/"
 tuner <- "irace"
 tuner_versions <- c("git", "3.5")
-nreps <- 5
+nreps <- 10
 
-setup_future_plan()
+setup_future_plan(cluster=TRUE)
 
 for (tuner_version in tuner_versions) {
   for (scenario_name in scenarios) {
