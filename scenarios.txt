@@ -1,4 +1,6 @@
-scenario-acotsp-tsp-rue-2000
-scenario-acoqap-qap-rs-00
+#acotsp-tsp-rue-2000
+#acoqap-qap-rs-00
+acotsp-tsp-rue-2000-default
+acoqap-qap-rs-00-default
 
 
