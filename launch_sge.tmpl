@@ -15,7 +15,7 @@ qsub <<EOF
 #     s     Mail is sent when the job is suspended.
 #
 #$ -o <%=outfile %>
-#$ -j y
+#$ -e <%=errfile %>
 #$ -cwd
 ## Use environment variables
 #$ -V

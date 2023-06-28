@@ -52,10 +52,10 @@ get_irace_cmdline <- function(scenario_file, exec_dir, seed, ncpus = NULL, test 
 
 sge_run_irace <- function(exe, scenario_file, exec_dir, run, jobname, ncpus)
 {
-  require_or_install(brew)
-  outfile <- fs::path_abs(file.path(exec_dir, paste0(jobname, ".log")))
+  outfile <- fs::path_abs(file.path(exec_dir, "stdout.txt"))
+  errfile <- fs::path_abs(file.path(exec_dir, "stderr.txt"))
   launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
-  brew("launch_sge.tmpl", output = launch_file)
+  brew::brew("launch_sge.tmpl", output = launch_file)
   fs::file_chmod(launch_file, "u+x")
   system2(launch_file, args = c(exe, get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = ncpus)), stdout = "", stderr = "")
   fs::file_delete(launch_file)
@@ -71,10 +71,10 @@ run_irace <- function(exe, scenario_file, exec_dir, run, jobname, ncpus)
 
 sge_run_irace_testing <- function(exe, scenario_file, exec_dir, confs_file, jobname, ncpus)
 {
-  require_or_install(brew)
-  outfile <- fs::path_abs(file.path(exec_dir, paste0(jobname, ".log")))
+  outfile <- fs::path_abs(file.path(exec_dir, "stdout.txt"))
+  errfile <- fs::path_abs(file.path(exec_dir, "stderr.txt"))
   launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
-  brew("launch_sge.tmpl", output = launch_file)
+  brew::brew("launch_sge.tmpl", output = launch_file)
   fs::file_chmod(launch_file, "u+x")
   system2(launch_file, args = c(exe, get_irace_cmdline(scenario_file, exec_dir, seed = 42, test = confs_file, ncpus = ncpus)),
           stdout = "", stderr = "")
@@ -257,6 +257,8 @@ setup_future_plan <- function(cluster = FALSE)
     #require_or_install(future.batchtools)
     ncpus <- 12
     cpu <- "haswell"
+    require_or_install(brew)
+
 #    future::plan(batchtools_sge, template = "./batchtools.sge.tmpl",
 #                 resources = list(cpu=cpu, ncpus=ncpus),
 # https://github.com/HenrikBengtsson/future.batchtools/issues/68
