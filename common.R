@@ -40,36 +40,57 @@ get_installed_irace <- function(install_dir, version)
   exe
 }
 
-sge_run_irace <- function(exe, scenario_file, exec_dir, run, jobname, ncpus)
+get_irace_cmdline <- function(scenario_file, exec_dir, seed, ncpus = NULL, test = NULL)
 {
-	require_or_install(brew)
-outfile <- fs::path_abs(file.path(exec_dir, paste0(jobname, ".log")))
-	launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
-brew("launch_sge.tmpl", output = launch_file)
-fs::file_chmod(launch_file, "u+x")
-   system2(launch_file, args = c(exe, "-s", scenario_file, "--exec-dir", exec_dir, "--seed", 42 + run, "--parallel", ncpus), stdout = "", stderr = "")
-fs::file_delete(launch_file)
+  args <- c("-s", scenario_file, "--exec-dir", exec_dir, "--seed", seed)
+  if (!is.null(ncpus))
+    args <- c(args, "--parallel", ncpus)
+  if (!is.null(test))
+    args <- c(args, "--only-test", test)
+  args
 }
 
-run_irace <- function(exe, scenario_file, exec_dir, run)
+sge_run_irace <- function(exe, scenario_file, exec_dir, run, jobname, ncpus)
 {
-  system2(exe, args = c("-s", scenario_file, "--exec-dir", exec_dir, "--seed", 42 + run),
+  require_or_install(brew)
+  outfile <- fs::path_abs(file.path(exec_dir, paste0(jobname, ".log")))
+  launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
+  brew("launch_sge.tmpl", output = launch_file)
+  fs::file_chmod(launch_file, "u+x")
+  system2(launch_file, args = c(exe, get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = ncpus)), stdout = "", stderr = "")
+  fs::file_delete(launch_file)
+}
+
+run_irace <- function(exe, scenario_file, exec_dir, run, jobname, ncpus)
+{
+  system2(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = ncpus),
           stdout = file.path(exec_dir, "stdout.txt"),
           stderr = file.path(exec_dir, "stderr.txt"))
 }
 
-run_irace_testing <- function(exe, scenario_file, exec_dir, confs_file)
+
+sge_run_irace_testing <- function(exe, scenario_file, exec_dir, confs_file, jobname, ncpus)
 {
-  system2(exe, args = c("-s", scenario_file, "--exec-dir", exec_dir, "--seed", 42, "--only-test", confs_file),
+  require_or_install(brew)
+  outfile <- fs::path_abs(file.path(exec_dir, paste0(jobname, ".log")))
+  launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
+  brew("launch_sge.tmpl", output = launch_file)
+  fs::file_chmod(launch_file, "u+x")
+  system2(launch_file, args = c(exe, get_irace_cmdline(scenario_file, exec_dir, seed = 42, test = confs_file, ncpus = ncpus)),
+          stdout = "", stderr = "")
+  fs::file_delete(launch_file)
+}
+
+run_irace_testing <- function(exe, scenario_file, exec_dir, confs_file, jobname, ncpus)
+{
+  system2(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42, test = confs_file, ncpus = ncpus),
           stdout = file.path(exec_dir, "stdout.txt"),
           stderr = file.path(exec_dir, "stderr.txt"))
 }
 
 get_tuner_executable <- function(install_dir, tool, version)
-{
   switch(tool,
          "irace" = get_installed_irace(install_dir, version))
-}
 
 find_scenario <- function(scenario_name)
 {
@@ -109,8 +130,8 @@ run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_vers
   scenario <- setup_scenario(scenario_name)
   cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, {nreps} times")
   mapply(sge_run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
-  			jobname = make_jobname(scenario_name, tuner, tuner_version, reps),
-			ncpus = 12)
+         jobname = make_jobname(scenario_name, tuner, tuner_version, reps),
+         ncpus = 12)
     #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
   #        future.label = paste0(tuner, "_", tuner_version, "-", scenario_name, "-%d"),
 #	  future.conditions = NULL)
@@ -122,8 +143,7 @@ run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_vers
 # batchtools::waitForJobs()
 }
 
-read_configurations <- function(scenario_name, file = "best_confs.rds",
-                                metadata = TRUE)
+read_configurations <- function(scenario_name, file = "best_confs.rds", metadata = TRUE)
 {
   x <- readRDS(file)[[scenario_name]]
   if (metadata) return(x)
@@ -195,6 +215,7 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
     cost <- lapply(paths, get_irace_test_results)
     print(cost)
     names(cost) <- NULL
+    # FIXME: Collect CPU time, max_experiments, nb_configurations, nb_instances.
     dt <- cbind(scenario = scenario_name, tuner = rep(tuner, each = nrow(cost[[1L]])),
                 rep = rep(reps, each = nrow(cost[[1L]])),
                 rbindlist(cost, use.names=TRUE))
@@ -231,8 +252,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 
 setup_future_plan <- function(cluster = FALSE)
 {
- require_or_install(future.apply)
-
+  require_or_install(future.apply)
   if (cluster) {
     #require_or_install(future.batchtools)
     ncpus <- 12
@@ -250,7 +270,6 @@ setup_future_plan <- function(cluster = FALSE)
 # reg <- batchtools::makeRegistry(file.dir=d)
 # reg$cluster.functions <- batchtools::makeClusterFunctionsSGE(template = "./batchtools.sge.tmpl")
 # setDefaultRegistry(reg)
-
     
   } else {
     Sys.setenv(PROCESSX_NOTIFY_OLD_SIGCHLD="true") # https://github.com/r-lib/processx/issues/236

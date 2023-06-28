@@ -1,9 +1,11 @@
 source("common.R")
 
 res <- readRDS("test_results.rds")
-res[, list(mean_cost=mean(cost)), by= list(scenario, tuner)]
+res[, rank_cost := rank(cost), by= list(scenario, tuner, instance)]
 
-res[, list(rank_cost=rank(cost)), by= list(scenario, tuner, instance)][, list(mean_rank = mean(rank_cost)), by=list(scenario,tuner)]
+sumtab <- res[, list(cost_mean = mean(cost), cost_sd = sd(cost),
+                     cost_mean_rank = mean(rank_cost), cost_sd_rank = sd(rank_cost)),
+              by=list(scenario, tuner)]
 
 library(ggplot2)
 
