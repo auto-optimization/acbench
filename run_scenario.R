@@ -4,8 +4,9 @@ scenarios <- read_scenarios_file(scenarios_file)
 exec_dir <- "~/scratch/execdir"
 install_dir <- "~/scratch/install/"
 tuner <- "irace"
-tuner_versions <- c("git", "3.5")
-nreps <- 10
+tuner_versions <- c("git") #, "3.5")
+#nreps <- 10
+nreps <- 4:10
 
 setup_future_plan(cluster=TRUE)
 

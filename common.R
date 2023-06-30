@@ -115,9 +115,11 @@ make_jobname <- function(scenario_name, tuner, tuner_version, rep)
 make_execdir_name <- function(exec_dir, scenario_name, tuner, tuner_version, rep)
  file.path(exec_dir, scenario_name, sprintf("%s_%s-%02d", tuner, tuner_version, rep))
 
-run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_version, nreps)
+run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_version, reps)
 {
-  reps <- seq_len(nreps)
+ if (length(reps) == 1)
+   reps <- seq_len(nreps)
+
   exec_dirs <- sapply(reps, function(r) {
     d <- make_execdir_name(exec_dir, scenario_name, tuner, tuner_version, r)
     if (fs::file_exists(d)) {
@@ -128,7 +130,7 @@ run_scenario <- function(scenario_name, install_dir, exec_dir, tuner, tuner_vers
   })
   exe <- get_tuner_executable(install_dir, tuner, tuner_version)
   scenario <- setup_scenario(scenario_name)
-  cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, {nreps} times")
+  cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
   mapply(sge_run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
          jobname = make_jobname(scenario_name, tuner, tuner_version, reps),
          ncpus = 12)

@@ -5,7 +5,7 @@ exec_dir <- "./execdir"
 install_dir <- "./install/"
 tuner <- "irace"
 tuner_versions <- c("git", "3.5")
-nreps <- 5
+nreps <- 10
 
 setup_future_plan()
 reps <- seq_len(nreps)
