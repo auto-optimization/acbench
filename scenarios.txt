@@ -1,6 +1,7 @@
-#acotsp-tsp-rue-2000
+acotsp-tsp-rue-2000
 acoqap-qap-rs-00
-#acotsp-tsp-rue-2000-default
-#acoqap-qap-rs-00-default
+acotsp-tsp-rue-2000-default
+acoqap-qap-rs-00-default
+
 
 

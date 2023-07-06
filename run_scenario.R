@@ -8,11 +8,11 @@ tuner_versions <- c("git") #, "3.5")
 #nreps <- 10
 nreps <- 4:10
 
-setup_future_plan(cluster=TRUE)
+acbench <- ACBench$new(exec_dir = exec_dir, install_dir = install_dir,
+                       cluster = TRUE, ncpus = 12)
 
 for (tuner_version in tuner_versions) {
   for (scenario_name in scenarios) {
-    run_scenario(scenario_name, install_dir = install_dir, exec_dir = exec_dir,
-                 tuner, tuner_version, nreps)
+    acbench$run_scenario(scenario_name, tuner, tuner_version, nreps)
   }
 }
