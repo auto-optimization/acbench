@@ -115,13 +115,15 @@ read_scenarios_file <- function(file)
   scan(scenarios_file, what = character(), strip.white=TRUE, comment.char = "#", quiet = TRUE)
 
 
-read_completed_logfile <- function(p)
+read_completed_logfile <- function(p, has_testing = FALSE)
 {
   p <- file.path(p, "irace.Rdata")
   if (!fs::file_exists(p)) cli_abort("File {.filename {p}} not found !")
   res <- irace::read_logfile(p)
   if (!is.null(res$state$completed) && res$state$completed == "Incomplete")
     cli_abort("File {.filename {p}} does not contain a completed irace run !")
+  if (has_testing && !irace::has_testing_data(res))
+    cli_abort("File {.filename {p}} does not contain testing data !")
   res
 }
 
@@ -132,42 +134,52 @@ get_best_configuration <- function(p)
   irace::getFinalElites(res, n=1, drop.metadata = TRUE)
 }
 
-get_irace_test_results <- function(p)
+get_irace_test_results <- function(res)
 {
-  require_or_install(irace)
-  res <- read_completed_logfile(p)
-  if (!irace::has_testing_data(res))
-    cli_abort("File {.filename {p}} does not contain testing data !")
+  if (is.character(res)) {
+    res <- read_completed_logfile(res, has_testing = TRUE)
+  } else if (!irace::has_testing_data(res)) {
+    cli_abort("log data does not contain testing data !")
+  }
   instances <- sub("^/", "", perl = TRUE,
                    sub(res$scenario$testInstancesDir, "", res$scenario$testInstances, fixed=TRUE))
-  data.table(instance = instances, seed = res$testing$seeds,
-             cost = res$testing$experiments[, 1L])
+  experiments <- res$testing$experiments
+  cbind(as.data.table(
+    # Cartesian product of matrix row and column names
+    # returns a data.frame with 2 column
+    expand.grid(instance_id = rownames(experiments), configuration_id = as.integer(colnames(experiments)), stringsAsFactors = FALSE)),
+    # Store matrix value into a vector:
+    # first all values from 1st column, then 2nd, and so on.
+    cost = as.vector(experiments),
+    seed = res$testing$seeds,
+    instance = instances)
 }
 
 collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds", verbose = TRUE)
 {
+  require_or_install(irace)
   res <- list()
+  if (fs::file_exists(file))
+    res <- readRDS(file = file)
+  
   for (scenario_name in scenarios) {
-    scenario_path <- file.path(exec_dir, scenario_name)
-    paths <- fs::dir_ls(scenario_path, type="directory")
-    tuner <- sub("-[0-9]+$", "", fs::path_rel(paths, start = scenario_path), perl=TRUE)
-    reps <- as.integer(sub("^.+-([0-9]+)$", "\\1", paths, perl=TRUE))
-    if (verbose) {
-      for (x in unique(tuner)) {
-        cat(sprintf("%s: %s: %s\n", scenario_name, x,
-                    paste0(collapse=", ", reps[x == tuner])))
-      }
+    p <- file.path(exec_dir, paste0("test-", scenario_name))
+    log <- read_completed_logfile(p, has_testing = TRUE)
+    results <- get_irace_test_results(log)
+    allConfigurations <- as.data.table(log$allConfigurations)
+    
+    confs <- read_configurations(scenario_name)
+    confs <- allConfigurations[confs, on = colnames(confs)[!startsWith(colnames(confs), ".")]]
+    set(confs, j=c(".PARENT.", colnames(confs)[!startsWith(colnames(confs), ".")]), value=NULL)
+    results <- results[confs, on=c(configuration_id=".ID.")]
+    colnames(results) <- sub(".", "", colnames(results), fixed=TRUE)
+    # FIXME: merge
+    old <- res[[scenario_name]]
+    if (!is.null(old)) {
+      results <- rbind(old[!results, on = c("scenario", "tuner", "rep")], results)
     }
-    cost <- lapply(paths, get_irace_test_results)
-    print(cost)
-    names(cost) <- NULL
-    # FIXME: Collect CPU time, max_experiments, nb_configurations, nb_instances.
-    dt <- cbind(scenario = scenario_name, tuner = rep(tuner, each = nrow(cost[[1L]])),
-                rep = rep(reps, each = nrow(cost[[1L]])),
-                rbindlist(cost, use.names=TRUE))
-    res <- c(res, list(dt))
+    res[[scenario_name]] <- results
   }
-  res <- rbindlist(res)
   if (!is.null(file))
     saveRDS(res, file = file)
   invisible(res)
@@ -188,7 +200,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
     }
     conf <- lapply(paths, get_best_configuration)
     names(conf) <- NULL
-    cbind(.scenario = scenario_name, .tuner = tuner,
+    cbind(.scenario = as.character(scenario_name), .tuner = as.character(tuner),
                .rep = reps, rbindlist(conf, use.names=TRUE))
   }, simplify = FALSE)
   if (!is.null(file))

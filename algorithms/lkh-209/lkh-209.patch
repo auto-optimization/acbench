@@ -1,0 +1,679 @@
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/BestKOptMove.c src-patched/BestKOptMove.c
+--- src/BestKOptMove.c	2021-01-05 11:12:04.000000000 +0000
++++ src-patched/BestKOptMove.c	2023-07-11 16:23:40.981344736 +0100
+@@ -2,6 +2,17 @@
+ #include "LKH.h"
+ #include "Sequence.h"
+ 
++Node **t;       /* The sequence of nodes to be used in a move */
++Node **T;       /* The currently best t's */
++Node **tSaved;  /* For saving t when using the BacktrackKOptMove function */
++int *p;         /* The permutation corresponding to the sequence in which
++                   the t's occur on the tour */
++int *q;         /* The inverse permutation of p */
++int *incl;      /* Array: incl[i] == j, if (t[i], t[j]) is an inclusion edge */
++int *cycle;     /* Array: cycle[i] is cycle number of t[i] */
++GainType *G;    /* For storing the G-values in the BestKOptMove function */
++static int K;          /* The value K for the current K-opt move */
++
+ /*
+  * The BestKOptMove function makes edge exchanges. If possible, it makes a 
+  * r-opt move (r >= 2) that improves the tour. Otherwise, it makes the most 
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/Genetic.c src-patched/Genetic.c
+--- src/Genetic.c	2021-01-05 11:12:28.000000000 +0000
++++ src-patched/Genetic.c	2023-07-11 16:14:00.651835053 +0100
+@@ -1,6 +1,14 @@
+ #include "LKH.h"
+ #include "Genetic.h"
+ 
++int MaxPopulationSize; /* The maximum size of the population */ 
++int PopulationSize;    /* The current size of the population */
++
++CrossoverFunction Crossover;
++
++static int **Population;      /* Array of individuals (solution tours) */
++GainType *Fitness;     /* The fitness (tour cost) of each individual */
++
+ /*
+  * The AddToPopulation function adds the current tour as an individual to 
+  * the population. The fitness of the individual is set equal to the cost
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/gpx.c src-patched/gpx.c
+--- src/gpx.c	2021-01-05 11:12:02.000000000 +0000
++++ src-patched/gpx.c	2023-07-11 16:11:07.110201689 +0100
+@@ -11,6 +11,10 @@
+ #include "LKH.h"
+ #include "gpx.h"
+ 
++int n_cities;
++Node **Map2Node;
++static int n_cand;
++
+ // GPX2
+ GainType gpx(int *solution_blue, int *solution_red, int *offspring)
+ {
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/INCLUDE/Genetic.h src-patched/INCLUDE/Genetic.h
+--- src/INCLUDE/Genetic.h	2021-01-05 11:12:04.000000000 +0000
++++ src-patched/INCLUDE/Genetic.h	2023-07-11 16:14:33.012139685 +0100
+@@ -7,13 +7,12 @@
+ 
+ typedef void (*CrossoverFunction) ();
+ 
+-int MaxPopulationSize; /* The maximum size of the population */ 
+-int PopulationSize;    /* The current size of the population */
++extern int MaxPopulationSize; /* The maximum size of the population */ 
++extern int PopulationSize;    /* The current size of the population */
+ 
+-CrossoverFunction Crossover;
++extern CrossoverFunction Crossover;
+ 
+-int **Population;      /* Array of individuals (solution tours) */
+-GainType *Fitness;     /* The fitness (tour cost) of each individual */
++extern GainType *Fitness;     /* The fitness (tour cost) of each individual */
+ 
+ void AddToPopulation(GainType Cost);
+ void ApplyCrossover(int i, int j);
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/INCLUDE/gpx.h src-patched/INCLUDE/gpx.h
+--- src/INCLUDE/gpx.h	2021-01-05 11:12:04.000000000 +0000
++++ src-patched/INCLUDE/gpx.h	2023-07-11 16:10:31.857869957 +0100
+@@ -52,13 +52,8 @@ void fusionB_v2(int *sol_blue, int *sol_
+ GainType off_gen(int *sol_blue, int *sol_red, int *offspring,
+                  int *label_list);
+ 
+-int n_cities, n_cand;
+-int n_partitions_size2, n_partitions_before_fusion,
+-n_partitions_after_fusion1, n_partitions_after_fusion2,
+-n_partitions_after_fusion3;
+-int n_partitions_after_fusion4, n_partitions_after_fusion5,
+-n_partitions_after_fusionB;
+-Node **Map2Node;
++extern int n_cities;
++extern Node **Map2Node;
+ 
+ int *alloc_vectori(int lines);
+ int **alloc_matrixi(int lines, int collums);
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/INCLUDE/LKH.h src-patched/INCLUDE/LKH.h
+--- src/INCLUDE/LKH.h	2021-01-05 11:12:04.000000000 +0000
++++ src-patched/INCLUDE/LKH.h	2023-07-11 15:57:00.298246781 +0100
+@@ -170,137 +170,137 @@ struct SwapRecord {
+     Node *t1, *t2, *t3, *t4;    /* The 4 nodes involved in a 2-opt move */
+ };
+ 
+-int AscentCandidates;   /* Number of candidate edges to be associated
++extern int AscentCandidates;   /* Number of candidate edges to be associated
+                            with each node during the ascent */
+-int BackboneTrials;     /* Number of backbone trials in each run */
+-int Backtracking;       /* Specifies whether backtracking is used for 
++extern int BackboneTrials;     /* Number of backbone trials in each run */
++extern int Backtracking;       /* Specifies whether backtracking is used for 
+                            the first move in a sequence of moves */
+-GainType BestCost;      /* Cost of the tour in BestTour */
+-int *BestTour;  /* Table containing best tour found */
+-GainType BetterCost;    /* Cost of the tour stored in BetterTour */
+-int *BetterTour;        /* Table containing the currently best tour 
++extern GainType BestCost;      /* Cost of the tour in BestTour */
++extern int *BestTour;  /* Table containing best tour found */
++extern GainType BetterCost;    /* Cost of the tour stored in BetterTour */
++extern int *BetterTour;        /* Table containing the currently best tour 
+                            in a run */
+-int CacheMask;  /* Mask for indexing the cache */
+-int *CacheVal;  /* Table of cached distances */
+-int *CacheSig;  /* Table of the signatures of cached 
++extern int CacheMask;  /* Mask for indexing the cache */
++extern int *CacheVal;  /* Table of cached distances */
++extern int *CacheSig;  /* Table of the signatures of cached 
+                    distances */
+-int CandidateFiles;     /* Number of CANDIDATE_FILEs */
+-int *CostMatrix;        /* Cost matrix */
+-int Dimension;  /* Number of nodes in the problem */
+-int DimensionSaved;     /* Saved value of Dimension */
+-int EdgeFiles;          /* Number of EDGE_FILEs */
+-double Excess;  /* Maximum alpha-value allowed for any 
++extern int CandidateFiles;     /* Number of CANDIDATE_FILEs */
++extern int *CostMatrix;        /* Cost matrix */
++extern int Dimension;  /* Number of nodes in the problem */
++extern int DimensionSaved;     /* Saved value of Dimension */
++extern int EdgeFiles;          /* Number of EDGE_FILEs */
++extern double Excess;  /* Maximum alpha-value allowed for any 
+                    candidate edge is set to Excess times the 
+                    absolute value of the lower bound of a 
+                    solution tour */
+-int ExtraCandidates;    /* Number of extra neighbors to be added to 
++extern int ExtraCandidates;    /* Number of extra neighbors to be added to 
+                            the candidate set of each node */
+-Node *FirstActive, *LastActive; /* First and last node in the list 
++extern Node *FirstActive, *LastActive; /* First and last node in the list 
+                                    of "active" nodes */
+-Node *FirstNode;        /* First node in the list of nodes */
+-Segment *FirstSegment;  /* A pointer to the first segment in the cyclic 
++extern Node *FirstNode;        /* First node in the list of nodes */
++extern Segment *FirstSegment;  /* A pointer to the first segment in the cyclic 
+                            list of segments */
+-SSegment *FirstSSegment;        /* A pointer to the first super segment in
++extern SSegment *FirstSSegment;        /* A pointer to the first super segment in
+                                    the cyclic list of segments */
+-int Gain23Used; /* Specifies whether Gain23 is used */
+-int GainCriterionUsed;  /* Specifies whether L&K's gain criterion is 
++extern int Gain23Used; /* Specifies whether Gain23 is used */
++extern int GainCriterionUsed;  /* Specifies whether L&K's gain criterion is 
+                            used */
+-double GridSize;        /* The grid size of toroidal instances */
+-int GroupSize;  /* Desired initial size of each segment */
+-int SGroupSize; /* Desired initial size of each super segment */
+-int Groups;     /* Current number of segments */
+-int SGroups;    /* Current number of super segments */
+-unsigned Hash;  /* Hash value corresponding to the current tour */
+-Node **Heap;    /* Heap used for computing minimum spanning 
++extern double GridSize;        /* The grid size of toroidal instances */
++extern int GroupSize;  /* Desired initial size of each segment */
++extern int SGroupSize; /* Desired initial size of each super segment */
++extern int Groups;     /* Current number of segments */
++extern int SGroups;    /* Current number of super segments */
++extern unsigned Hash;  /* Hash value corresponding to the current tour */
++extern Node **Heap;    /* Heap used for computing minimum spanning 
+                    trees */
+-HashTable *HTable;      /* Hash table used for storing tours */
+-int InitialPeriod;      /* Length of the first period in the ascent */
+-int InitialStepSize;    /* Initial step size used in the ascent */
+-double InitialTourFraction;     /* Fraction of the initial tour to be 
++extern HashTable *HTable;      /* Hash table used for storing tours */
++extern int InitialPeriod;      /* Length of the first period in the ascent */
++extern int InitialStepSize;    /* Initial step size used in the ascent */
++extern double InitialTourFraction;     /* Fraction of the initial tour to be 
+                                    constructed by INITIAL_TOUR_FILE edges */
+-char *LastLine; /* Last input line */
+-double LowerBound;      /* Lower bound found by the ascent */
+-int Kicks;      /* Specifies the number of K-swap-kicks */
+-int KickType;   /* Specifies K for a K-swap-kick */
+-int M;          /* The M-value is used when solving an ATSP-
++extern char *LastLine; /* Last input line */
++extern double LowerBound;      /* Lower bound found by the ascent */
++extern int Kicks;      /* Specifies the number of K-swap-kicks */
++extern int KickType;   /* Specifies K for a K-swap-kick */
++extern int M;          /* The M-value is used when solving an ATSP-
+                    instance by transforming it to a STSP-instance */
+-int MaxBreadth; /* The maximum number of candidate edges 
++extern int MaxBreadth; /* The maximum number of candidate edges 
+                    considered at each level of the search for
+                    a move */
+-int MaxCandidates;      /* Maximum number of candidate edges to be 
++extern int MaxCandidates;      /* Maximum number of candidate edges to be 
+                            associated with each node */
+-int MaxMatrixDimension; /* Maximum dimension for an explicit cost matrix */
+-int MaxSwaps;   /* Maximum number of swaps made during the 
++extern int MaxMatrixDimension; /* Maximum dimension for an explicit cost matrix */
++extern int MaxSwaps;   /* Maximum number of swaps made during the 
+                    search for a move */
+-int MaxTrials;  /* Maximum number of trials in each run */
+-int MergeTourFiles;     /* Number of MERGE_TOUR_FILEs */
+-int MoveType;   /* Specifies the sequantial move type to be used 
++extern int MaxTrials;  /* Maximum number of trials in each run */
++extern int MergeTourFiles;     /* Number of MERGE_TOUR_FILEs */
++extern int MoveType;   /* Specifies the sequantial move type to be used 
+                    in local search. A value K >= 2 signifies 
+                    that a k-opt moves are tried for k <= K */
+-Node *NodeSet;  /* Array of all nodes */
+-int Norm;       /* Measure of a 1-tree's discrepancy from a tour */
+-int NonsequentialMoveType;      /* Specifies the nonsequential move type to
++extern Node *NodeSet;  /* Array of all nodes */
++extern int Norm;       /* Measure of a 1-tree's discrepancy from a tour */
++extern int NonsequentialMoveType;      /* Specifies the nonsequential move type to
+                                    be used in local search. A value 
+                                    L >= 4 signifies that nonsequential
+                                    l-opt moves are tried for l <= L */
+-GainType Optimum;       /* Known optimal tour length. 
++extern GainType Optimum;       /* Known optimal tour length. 
+                            If StopAtOptimum is 1, a run will be 
+                            terminated as soon as a tour length 
+                            becomes equal this value */
+-int PatchingA;  /* Specifies the maximum number of alternating
++extern int PatchingA;  /* Specifies the maximum number of alternating
+                    cycles to be used for patching disjunct cycles */
+-int PatchingC;  /* Specifies the maximum number of disjoint cycles to be 
++extern int PatchingC;  /* Specifies the maximum number of disjoint cycles to be 
+                    patched (by one or more alternating cycles) */
+-int Precision;  /* Internal precision in the representation of 
++extern int Precision;  /* Internal precision in the representation of 
+                    transformed distances */
+-int PredSucCostAvailable;  /* PredCost and SucCost are available */
+-int POPMUSIC_InitialTour;  /* Specifies whether the first POPMUSIC tour
++extern int PredSucCostAvailable;  /* PredCost and SucCost are available */
++extern int POPMUSIC_InitialTour;  /* Specifies whether the first POPMUSIC tour
+                               is used as initial tour for LK */
+-int POPMUSIC_MaxNeighbors; /* Maximum number of nearest neighbors used 
++extern int POPMUSIC_MaxNeighbors; /* Maximum number of nearest neighbors used 
+                               as candidates in iterated 3-opt */
+-int POPMUSIC_SampleSize;   /* The sample size */
+-int POPMUSIC_Solutions;    /* Number of solutions to generate */
+-int POPMUSIC_Trials;       /* Maximum trials used for iterated 3-opt */
+-unsigned *Rand; /* Table of random values */
+-int Recombination; /* IPT or GPX2 */
+-int RestrictedSearch;      /* Specifies whether the choice of the first 
++extern int POPMUSIC_SampleSize;   /* The sample size */
++extern int POPMUSIC_Solutions;    /* Number of solutions to generate */
++extern int POPMUSIC_Trials;       /* Maximum trials used for iterated 3-opt */
++extern unsigned *Rand; /* Table of random values */
++extern int Recombination; /* IPT or GPX2 */
++extern int RestrictedSearch;      /* Specifies whether the choice of the first 
+                               edge to be broken is restricted */
+-short Reversed; /* Boolean used to indicate whether a tour has 
++extern short Reversed; /* Boolean used to indicate whether a tour has 
+                    been reversed */
+-int Run;        /* Current run number */
+-int Runs;       /* Total number of runs */
+-unsigned Seed;  /* Initial seed for random number generation */
+-int StopAtOptimum;      /* Specifies whether a run will be terminated if 
++extern int Run;        /* Current run number */
++extern int Runs;       /* Total number of runs */
++extern unsigned Seed;  /* Initial seed for random number generation */
++extern int StopAtOptimum;      /* Specifies whether a run will be terminated if 
+                            the tour length becomes equal to Optimum */
+-int Subgradient;        /* Specifies whether the Pi-values should be 
++extern int Subgradient;        /* Specifies whether the Pi-values should be 
+                            determined by subgradient optimization */
+-int SubproblemSize;     /* Number of nodes in a subproblem */
+-int SubsequentMoveType; /* Specifies the move type to be used for all 
++extern int SubproblemSize;     /* Number of nodes in a subproblem */
++extern int SubsequentMoveType; /* Specifies the move type to be used for all 
+                            moves following the first move in a sequence 
+                            of moves. The value K >= 2 signifies that a 
+                            K-opt move is to be used */
+-int SubsequentPatching; /* Species whether patching is used for 
++extern int SubsequentPatching; /* Species whether patching is used for 
+                            subsequent moves */
+-SwapRecord *SwapStack;  /* Stack of SwapRecords */
+-int Swaps;      /* Number of swaps made during a tentative move */
+-double TimeLimit;       /* The time limit in seconds for each run */
+-int TraceLevel; /* Specifies the level of detail of the output 
++extern SwapRecord *SwapStack;  /* Stack of SwapRecords */
++extern int Swaps;      /* Number of swaps made during a tentative move */
++extern double TimeLimit;       /* The time limit in seconds for each run */
++extern int TraceLevel; /* Specifies the level of detail of the output 
+                    given during the solution process. 
+                    The value 0 signifies a minimum amount of 
+                    output. The higher the value is the more 
+                    information is given */
+-int Trial;      /* Ordinal number of the current trial */
++extern int Trial;      /* Ordinal number of the current trial */
+ 
+ /* The following variables are read by the functions ReadParameters and 
+    ReadProblem: */
+ 
+-char *ParameterFileName, *ProblemFileName, *PiFileName,
++extern char *ProblemFileName, *PiFileName,
+     *TourFileName, *OutputTourFileName, *InputTourFileName,
+     **CandidateFileName, **EdgeFileName, *InitialTourFileName,
+     *SubproblemTourFileName, **MergeTourFileName;
+-char *Name, *Type, *EdgeWeightType, *EdgeWeightFormat,
++extern char *Name, *Type, *EdgeWeightType, *EdgeWeightFormat,
+     *EdgeDataFormat, *NodeCoordType, *DisplayDataType;
+-int CandidateSetSymmetric, CandidateSetType,
++extern int CandidateSetSymmetric, CandidateSetType,
+     CoordType, DelaunayPartitioning, DelaunayPure,
+     ExtraCandidateSetSymmetric, ExtraCandidateSetType,
+     InitialTourAlgorithm,
+@@ -312,11 +312,10 @@ int CandidateSetSymmetric, CandidateSetT
+     RohePartitioning, SierpinskiPartitioning,
+     SubproblemBorders, SubproblemsCompressed, WeightType, WeightFormat;
+ 
+-FILE *ParameterFile, *ProblemFile, *PiFile, *InputTourFile,
+-    *TourFile, *InitialTourFile, *SubproblemTourFile, **MergeTourFile;
+-CostFunction Distance, D, C, c;
+-MoveFunction BestMove, BacktrackMove, BestSubsequentMove;
+-MergeTourFunction MergeWithTour;
++extern FILE *PiFile, *SubproblemTourFile, **MergeTourFile;
++extern CostFunction Distance, D, C, c;
++extern MoveFunction BestMove, BacktrackMove, BestSubsequentMove;
++extern MergeTourFunction MergeWithTour;
+ 
+ /* Function prototypes: */
+ 
+@@ -444,7 +443,7 @@ unsigned Random(void);
+ int ReadCandidates(int MaxCandidates);
+ int ReadEdges(int MaxCandidates);
+ char *ReadLine(FILE * InputFile);
+-void ReadParameters(void);
++void ReadParameters(const char *ParameterFileName);
+ int ReadPenalties(void);
+ void ReadProblem(void);
+ void ReadTour(char * FileName, FILE ** File);
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/INCLUDE/Sequence.h src-patched/INCLUDE/Sequence.h
+--- src/INCLUDE/Sequence.h	2021-01-05 11:12:04.000000000 +0000
++++ src-patched/INCLUDE/Sequence.h	2023-07-11 16:23:53.941473554 +0100
+@@ -10,16 +10,15 @@
+ 
+ #include "LKH.h"
+ 
+-Node **t;       /* The sequence of nodes to be used in a move */
+-Node **T;       /* The currently best t's */
+-Node **tSaved;  /* For saving t when using the BacktrackKOptMove function */
+-int *p;         /* The permutation corresponding to the sequence in which
+-                   the t's occur on the tour */
+-int *q;         /* The inverse permutation of p */
+-int *incl;      /* Array: incl[i] == j, if (t[i], t[j]) is an inclusion edge */
+-int *cycle;     /* Array: cycle[i] is cycle number of t[i] */
+-GainType *G;    /* For storing the G-values in the BestKOptMove function */
+-int K;          /* The value K for the current K-opt move */
++extern Node **t;       /* The sequence of nodes to be used in a move */
++extern Node **T;       /* The currently best t's */
++extern Node **tSaved;  /* For saving t when using the BacktrackKOptMove function */
++extern int *p;         /* The permutation corresponding to the sequence in which
++                          the t's occur on the tour */
++extern int *q;         /* The inverse permutation of p */
++extern int *incl;      /* Array: incl[i] == j, if (t[i], t[j]) is an inclusion edge */
++extern int *cycle;     /* Array: cycle[i] is cycle number of t[i] */
++extern GainType *G;    /* For storing the G-values in the BestKOptMove function */
+ 
+ int FeasibleKOptMove(int k);
+ void FindPermutation(int k);
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/LKHmain.c src-patched/LKHmain.c
+--- src/LKHmain.c	2021-01-05 11:12:26.000000000 +0000
++++ src-patched/LKHmain.c	2023-07-11 15:47:11.996754310 +0100
+@@ -11,9 +11,7 @@ int main(int argc, char *argv[])
+     double Time, LastTime = GetTime();
+ 
+     /* Read the specification of the problem */
+-    if (argc >= 2)
+-        ParameterFileName = argv[1];
+-    ReadParameters();
++    ReadParameters((argc >= 2) ? argv[1] : NULL);
+     MaxMatrixDimension = 20000;
+     MergeWithTour = Recombination == IPT ? MergeWithTourIPT :
+         MergeWithTourGPX2;
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/ReadParameters.c src-patched/ReadParameters.c
+--- src/ReadParameters.c	2021-01-05 11:12:26.000000000 +0000
++++ src-patched/ReadParameters.c	2023-07-11 15:56:45.590109048 +0100
+@@ -1,6 +1,153 @@
+ #include "LKH.h"
+ #include "Genetic.h"
+ 
++int AscentCandidates;   /* Number of candidate edges to be associated
++                           with each node during the ascent */
++int BackboneTrials;     /* Number of backbone trials in each run */
++int Backtracking;       /* Specifies whether backtracking is used for 
++                           the first move in a sequence of moves */
++GainType BestCost;      /* Cost of the tour in BestTour */
++int *BestTour;  /* Table containing best tour found */
++GainType BetterCost;    /* Cost of the tour stored in BetterTour */
++int *BetterTour;        /* Table containing the currently best tour 
++                           in a run */
++int CacheMask;  /* Mask for indexing the cache */
++int *CacheVal;  /* Table of cached distances */
++int *CacheSig;  /* Table of the signatures of cached 
++                   distances */
++int CandidateFiles;     /* Number of CANDIDATE_FILEs */
++int *CostMatrix;        /* Cost matrix */
++int Dimension;  /* Number of nodes in the problem */
++int DimensionSaved;     /* Saved value of Dimension */
++int EdgeFiles;          /* Number of EDGE_FILEs */
++double Excess;  /* Maximum alpha-value allowed for any 
++                   candidate edge is set to Excess times the 
++                   absolute value of the lower bound of a 
++                   solution tour */
++int ExtraCandidates;    /* Number of extra neighbors to be added to 
++                           the candidate set of each node */
++Node *FirstActive, *LastActive; /* First and last node in the list 
++                                   of "active" nodes */
++Node *FirstNode;        /* First node in the list of nodes */
++Segment *FirstSegment;  /* A pointer to the first segment in the cyclic 
++                           list of segments */
++SSegment *FirstSSegment;        /* A pointer to the first super segment in
++                                   the cyclic list of segments */
++int Gain23Used; /* Specifies whether Gain23 is used */
++int GainCriterionUsed;  /* Specifies whether L&K's gain criterion is 
++                           used */
++double GridSize;        /* The grid size of toroidal instances */
++int GroupSize;  /* Desired initial size of each segment */
++int SGroupSize; /* Desired initial size of each super segment */
++int Groups;     /* Current number of segments */
++int SGroups;    /* Current number of super segments */
++unsigned Hash;  /* Hash value corresponding to the current tour */
++Node **Heap;    /* Heap used for computing minimum spanning 
++                   trees */
++HashTable *HTable;      /* Hash table used for storing tours */
++int InitialPeriod;      /* Length of the first period in the ascent */
++int InitialStepSize;    /* Initial step size used in the ascent */
++double InitialTourFraction;     /* Fraction of the initial tour to be 
++                                   constructed by INITIAL_TOUR_FILE edges */
++char *LastLine; /* Last input line */
++double LowerBound;      /* Lower bound found by the ascent */
++int Kicks;      /* Specifies the number of K-swap-kicks */
++int KickType;   /* Specifies K for a K-swap-kick */
++int M;          /* The M-value is used when solving an ATSP-
++                   instance by transforming it to a STSP-instance */
++int MaxBreadth; /* The maximum number of candidate edges 
++                   considered at each level of the search for
++                   a move */
++int MaxCandidates;      /* Maximum number of candidate edges to be 
++                           associated with each node */
++int MaxMatrixDimension; /* Maximum dimension for an explicit cost matrix */
++int MaxSwaps;   /* Maximum number of swaps made during the 
++                   search for a move */
++int MaxTrials;  /* Maximum number of trials in each run */
++int MergeTourFiles;     /* Number of MERGE_TOUR_FILEs */
++int MoveType;   /* Specifies the sequantial move type to be used 
++                   in local search. A value K >= 2 signifies 
++                   that a k-opt moves are tried for k <= K */
++Node *NodeSet;  /* Array of all nodes */
++int Norm;       /* Measure of a 1-tree's discrepancy from a tour */
++int NonsequentialMoveType;      /* Specifies the nonsequential move type to
++                                   be used in local search. A value 
++                                   L >= 4 signifies that nonsequential
++                                   l-opt moves are tried for l <= L */
++GainType Optimum;       /* Known optimal tour length. 
++                           If StopAtOptimum is 1, a run will be 
++                           terminated as soon as a tour length 
++                           becomes equal this value */
++int PatchingA;  /* Specifies the maximum number of alternating
++                   cycles to be used for patching disjunct cycles */
++int PatchingC;  /* Specifies the maximum number of disjoint cycles to be 
++                   patched (by one or more alternating cycles) */
++int Precision;  /* Internal precision in the representation of 
++                   transformed distances */
++int PredSucCostAvailable;  /* PredCost and SucCost are available */
++int POPMUSIC_InitialTour;  /* Specifies whether the first POPMUSIC tour
++                              is used as initial tour for LK */
++int POPMUSIC_MaxNeighbors; /* Maximum number of nearest neighbors used 
++                              as candidates in iterated 3-opt */
++int POPMUSIC_SampleSize;   /* The sample size */
++int POPMUSIC_Solutions;    /* Number of solutions to generate */
++int POPMUSIC_Trials;       /* Maximum trials used for iterated 3-opt */
++unsigned *Rand; /* Table of random values */
++int Recombination; /* IPT or GPX2 */
++int RestrictedSearch;      /* Specifies whether the choice of the first 
++                              edge to be broken is restricted */
++short Reversed; /* Boolean used to indicate whether a tour has 
++                   been reversed */
++int Run;        /* Current run number */
++int Runs;       /* Total number of runs */
++unsigned Seed;  /* Initial seed for random number generation */
++int StopAtOptimum;      /* Specifies whether a run will be terminated if 
++                           the tour length becomes equal to Optimum */
++int Subgradient;        /* Specifies whether the Pi-values should be 
++                           determined by subgradient optimization */
++int SubproblemSize;     /* Number of nodes in a subproblem */
++int SubsequentMoveType; /* Specifies the move type to be used for all 
++                           moves following the first move in a sequence 
++                           of moves. The value K >= 2 signifies that a 
++                           K-opt move is to be used */
++int SubsequentPatching; /* Species whether patching is used for 
++                           subsequent moves */
++SwapRecord *SwapStack;  /* Stack of SwapRecords */
++int Swaps;      /* Number of swaps made during a tentative move */
++double TimeLimit;       /* The time limit in seconds for each run */
++int TraceLevel; /* Specifies the level of detail of the output 
++                   given during the solution process. 
++                   The value 0 signifies a minimum amount of 
++                   output. The higher the value is the more 
++                   information is given */
++int Trial;      /* Ordinal number of the current trial */
++
++/* The following variables are read by the functions ReadParameters and 
++   ReadProblem: */
++
++char *ProblemFileName, *PiFileName,
++    *TourFileName, *OutputTourFileName, *InputTourFileName,
++    **CandidateFileName, **EdgeFileName, *InitialTourFileName,
++    *SubproblemTourFileName, **MergeTourFileName;
++char *Name, *Type, *EdgeWeightType, *EdgeWeightFormat,
++    *EdgeDataFormat, *NodeCoordType, *DisplayDataType;
++int CandidateSetSymmetric, CandidateSetType,
++    CoordType, DelaunayPartitioning, DelaunayPure,
++    ExtraCandidateSetSymmetric, ExtraCandidateSetType,
++    InitialTourAlgorithm,
++    KarpPartitioning, KCenterPartitioning, KMeansPartitioning,
++    MoorePartitioning,
++    PatchingAExtended, PatchingARestricted,
++    PatchingCExtended, PatchingCRestricted,
++    ProblemType,
++    RohePartitioning, SierpinskiPartitioning,
++    SubproblemBorders, SubproblemsCompressed, WeightType, WeightFormat;
++
++FILE *PiFile, *SubproblemTourFile, **MergeTourFile;
++CostFunction Distance, D, C, c;
++MoveFunction BestMove, BacktrackMove, BestSubsequentMove;
++MergeTourFunction MergeWithTour;
++
+ /*
+  * The ReadParameters function reads the name of a parameter file from
+  * standard input and reads the problem parameters from this file.
+@@ -392,7 +539,7 @@ static char *ReadYesOrNo(int *V);
+ #undef max
+ static size_t max(size_t a, size_t b);
+ 
+-void ReadParameters()
++void ReadParameters(const char *ParameterFileName)
+ {
+     char *Line, *Keyword, *Token, *Name;
+     unsigned int i;
+@@ -461,6 +608,7 @@ void ReadParameters()
+     TimeLimit = DBL_MAX;
+     TraceLevel = 1;
+ 
++    FILE *ParameterFile;
+     if (ParameterFileName) {
+         if (!(ParameterFile = fopen(ParameterFileName, "r")))
+             eprintf("Cannot open PARAMETER_FILE: \"%s\"",
+diff -up '--exclude=*svn*' '--exclude=*~' -Naur '--exclude=*.o' src/ReadProblem.c src-patched/ReadProblem.c
+--- src/ReadProblem.c	2021-01-05 11:12:06.000000000 +0000
++++ src-patched/ReadProblem.c	2023-07-11 16:05:31.523045144 +0100
+@@ -1,6 +1,7 @@
+ #include "LKH.h"
+ #include "Heap.h"
+ 
++static FILE *InputTourFile, *InitialTourFile;
+ /*
+  * The ReadProblem function reads the problem data in TSPLIB format from the
+  * file specified in the parameter file (PROBLEM_FILE).
+@@ -211,17 +212,17 @@ static char *Copy(char *S);
+ static void CreateNodes(void);
+ static int FixEdge(Node * Na, Node * Nb);
+ static void Read_DIMENSION(void);
+-static void Read_DISPLAY_DATA_SECTION(void);
++static void Read_DISPLAY_DATA_SECTION(FILE *ProblemFile);
+ static void Read_DISPLAY_DATA_TYPE(void);
+ static void Read_EDGE_DATA_FORMAT(void);
+-static void Read_EDGE_DATA_SECTION(void);
++static void Read_EDGE_DATA_SECTION(FILE *ProblemFile);
+ static void Read_EDGE_WEIGHT_FORMAT(void);
+-static void Read_EDGE_WEIGHT_SECTION(void);
++static void Read_EDGE_WEIGHT_SECTION(FILE *ProblemFile);
+ static void Read_EDGE_WEIGHT_TYPE(void);
+-static void Read_FIXED_EDGES_SECTION(void);
++static void Read_FIXED_EDGES_SECTION(FILE *ProblemFile);
+ static void Read_GRID_SIZE(void);
+ static void Read_NAME(void);
+-static void Read_NODE_COORD_SECTION(void);
++static void Read_NODE_COORD_SECTION(FILE *ProblemFile);
+ static void Read_NODE_COORD_TYPE(void);
+ static void Read_TOUR_SECTION(FILE ** File);
+ static void Read_TYPE(void);
+@@ -232,7 +233,8 @@ void ReadProblem()
+ {
+     int i, K;
+     char *Line, *Keyword;
+-
++    FILE *ProblemFile;
++    
+     if (!(ProblemFile = fopen(ProblemFileName, "r")))
+         eprintf("Cannot open PROBLEM_FILE: \"%s\"", ProblemFileName);
+     if (TraceLevel >= 1)
+@@ -261,29 +263,29 @@ void ReadProblem()
+         else if (!strcmp(Keyword, "DIMENSION"))
+             Read_DIMENSION();
+         else if (!strcmp(Keyword, "DISPLAY_DATA_SECTION"))
+-            Read_DISPLAY_DATA_SECTION();
++            Read_DISPLAY_DATA_SECTION(ProblemFile);
+         else if (!strcmp(Keyword, "DISPLAY_DATA_TYPE"))
+             Read_DISPLAY_DATA_TYPE();
+         else if (!strcmp(Keyword, "EDGE_DATA_FORMAT"))
+             Read_EDGE_DATA_FORMAT();
+         else if (!strcmp(Keyword, "EDGE_DATA_SECTION"))
+-            Read_EDGE_DATA_SECTION();
++            Read_EDGE_DATA_SECTION(ProblemFile);
+         else if (!strcmp(Keyword, "EDGE_WEIGHT_FORMAT"))
+             Read_EDGE_WEIGHT_FORMAT();
+         else if (!strcmp(Keyword, "EDGE_WEIGHT_SECTION"))
+-            Read_EDGE_WEIGHT_SECTION();
++            Read_EDGE_WEIGHT_SECTION(ProblemFile);
+         else if (!strcmp(Keyword, "EDGE_WEIGHT_TYPE"))
+             Read_EDGE_WEIGHT_TYPE();
+         else if (!strcmp(Keyword, "EOF"))
+             break;
+         else if (!strcmp(Keyword, "FIXED_EDGES_SECTION"))
+-            Read_FIXED_EDGES_SECTION();
++            Read_FIXED_EDGES_SECTION(ProblemFile);
+         else if (!strcmp(Keyword, "GRID_SIZE"))
+             Read_GRID_SIZE();
+         else if (!strcmp(Keyword, "NAME"))
+             Read_NAME();
+         else if (!strcmp(Keyword, "NODE_COORD_SECTION"))
+-            Read_NODE_COORD_SECTION();
++            Read_NODE_COORD_SECTION(ProblemFile);
+         else if (!strcmp(Keyword, "NODE_COORD_TYPE"))
+             Read_NODE_COORD_TYPE();
+         else if (!strcmp(Keyword, "TOUR_SECTION"))
+@@ -579,7 +581,7 @@ static void Read_DIMENSION()
+     DimensionSaved = Dimension;
+ }
+ 
+-static void Read_DISPLAY_DATA_SECTION()
++static void Read_DISPLAY_DATA_SECTION(FILE *ProblemFile)
+ {
+     Node *N;
+     int Id, i;
+@@ -658,7 +660,7 @@ static void Read_EDGE_DATA_FORMAT()
+                 " cannot be used together with SUBPROBLEM_TOUR_FILE");
+ }
+ 
+-static void Read_EDGE_DATA_SECTION()
++static void Read_EDGE_DATA_SECTION(FILE *ProblemFile)
+ {
+     Node *Ni, *Nj;
+     int i, j, W = 0, WithWeights = 0, FirstLine = 1;
+@@ -780,7 +782,7 @@ static void Read_EDGE_WEIGHT_FORMAT()
+         eprintf("Unknown EDGE_WEIGHT_FORMAT: %s", EdgeWeightFormat);
+ }
+ 
+-static void Read_EDGE_WEIGHT_SECTION()
++static void Read_EDGE_WEIGHT_SECTION(FILE *ProblemFile)
+ {
+     Node *Ni, *Nj;
+     int i, j, n, W;
+@@ -1057,7 +1059,7 @@ static void Read_EDGE_WEIGHT_TYPE()
+         eprintf("Unknown EDGE_WEIGHT_TYPE: %s", EdgeWeightType);
+ }
+ 
+-static void Read_FIXED_EDGES_SECTION()
++static void Read_FIXED_EDGES_SECTION(FILE *ProblemFile)
+ {
+     Node *Ni, *Nj, *N, *NPrev = 0, *NNext;
+     int i, j, Count = 0;
+@@ -1112,7 +1114,7 @@ static void Read_GRID_SIZE()
+         eprintf("GRID_SIZE: non-negative real expected");
+ }
+ 
+-static void Read_NODE_COORD_SECTION()
++static void Read_NODE_COORD_SECTION(FILE *ProblemFile)
+ {
+     Node *N;
+     int Id, i;

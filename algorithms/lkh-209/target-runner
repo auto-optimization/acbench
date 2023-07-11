@@ -1,0 +1,65 @@
+#!/bin/sh
+###############################################################################
+# This script is run in the execution directory (execDir, --exec-dir).
+#
+# PARAMETERS:
+# $1 is the candidate configuration number
+# $2 is the instance ID
+# $3 is the seed
+# $4 is the instance name
+# The rest ($* after `shift 4') are parameters to the run
+#
+# RETURN VALUE:
+# This script should print one numerical value: the cost that must be minimized.
+# Exit with 0 if no error, with 1 in case of error
+###############################################################################
+error() {
+    echo "`TZ=UTC date`: $0: error: $@"
+    exit 1
+}
+
+# This parses the arguments given by irace. Do not touch it!
+CONFIG_ID="$1"
+INSTANCE_ID="$2"
+SEED="$3"
+INSTANCE="$4"
+# All other parameters are the candidate parameters to be passed to program
+shift 4 || error "Not enough parameters to $0"
+CONFIG_PARAMS=$(echo $* | sed 's/ /\n/g')
+# End of parsing
+
+## Find our own location.
+BINDIR=$(dirname "$(readlink -f $0)")
+EXE=${BINDIR}/LKH
+if [ ! -x "$(command -v ${EXE})" ]; then
+    error "${EXE}: not found or not executable (pwd: $(pwd))"
+fi
+
+PARFILE=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.params
+STDOUT=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stdout
+STDERR=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stderr
+
+cat <<EOF >>$PARFILE
+PROBLEM_FILE = $INSTANCE
+RUNS = 1
+TIME_LIMIT = 10
+SEED = $SEED
+TRACE_LEVEL = 2
+$CONFIG_PARAMS
+EOF
+
+$EXE ${PARFILE}  1> $STDOUT 2> $STDERR
+
+# Does this file exist?
+if [ ! -s "${STDOUT}" ]; then
+    # In this case, the file does not exist. Let's exit with a value 
+    # different from 0. In this case irace will stop with an error.
+    error "${STDOUT}: No such file or directory"
+fi
+
+COST=$(sed -n 's/^Run 1: Cost = \([^,]\+\),.\+$/\1/p')
+# Print it!
+echo "$COST"
+# We are done with our duty. Clean files and exit with 0 (no error).
+rm -f "$PARFILE" "${STDOUT}" "${STDERR}"
+exit 0
