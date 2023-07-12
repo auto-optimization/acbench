@@ -38,4 +38,7 @@ instances/tsp/tsp-rue-2000/test/
 .future/
 execdir/
 install/
+algorithms/runsolver/runsolver
+algorithms/lkh-209/LKH
+algorithms/lkh-209/src/
 
