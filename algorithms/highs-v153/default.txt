@@ -1,0 +1,2 @@
+presolve run_crossover simplex_strategy simplex_scale_strategy simplex_dual_edge_weight_strategy simplex_primal_edge_weight_strategy mip_lp_age_limit mip_pool_age_limit mip_pool_soft_limit mip_pscost_minreliable mip_heuristic_effort
+choose   on            1                1                     -1                                -1                                  10               30                   10000               8                      0.05

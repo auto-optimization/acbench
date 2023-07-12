@@ -1,0 +1,78 @@
+#!/bin/sh
+###############################################################################
+# This script is run in the execution directory (execDir, --exec-dir).
+#
+# PARAMETERS:
+# $1 is the candidate configuration number
+# $2 is the instance ID
+# $3 is the seed
+# $4 is the instance name
+# The rest ($* after `shift 4') are parameters to the run
+#
+# RETURN VALUE:
+# This script should print one numerical value: the cost that must be minimized.
+# Exit with 0 if no error, with 1 in case of error
+###############################################################################
+error() {
+    echo "`TZ=UTC date`: $0: error: $@"
+    exit 1
+}
+
+# This parses the arguments given by irace. Do not touch it!
+CONFIG_ID="$1"
+INSTANCE_ID="$2"
+SEED="$3"
+INSTANCE="$4"
+BOUND="$5"
+# All other parameters are the candidate parameters to be passed to program
+shift 5 || error "Not enough parameters to $0"
+CONFIG_PARAMS=$(echo $* | sed 's/ /\n/g')
+# End of parsing
+
+## Find our own location.
+BINDIR=$(dirname "$(readlink -f $0)")
+if [ -z "$ACBENCH_INSTALL_DIR" ]; then
+    ACBENCH_INSTALL_DIR=$(realpath $BINDIR/../../install)
+fi
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ACBENCH_INSTALL_DIR/lib
+
+EXE="${ACBENCH_INSTALL_DIR}/bin/highs"
+
+if [ ! -x "$(command -v ${EXE})" ]; then
+    error "${EXE}: not found or not executable (pwd: $(pwd))"
+fi
+
+TIME_LIMIT=$BOUND
+PARFILE=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.params
+STDOUT=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stdout
+STDERR=c${CONFIG_ID}-${INSTANCE_ID}-${SEED}.stderr
+
+cat <<EOF >$PARFILE
+parallel = off
+time_limit = $TIME_LIMIT
+random_seed = $SEED
+threads = 1
+output_flag = true
+log_to_console = true
+log_file = /dev/null
+$CONFIG_PARAMS
+EOF
+
+$EXE --model_file=$INSTANCE --options_file=${PARFILE} 1> $STDOUT 2> $STDERR
+
+# Does this file exist?
+if [ ! -s "${STDOUT}" ]; then
+    error "${STDOUT}: No such file or directory"
+fi
+
+STATUS=$(sed -n -e 's/^[ \t]\+Status[ \t]\+\(Optimal\|Time limit reached\)[ \t]*$/\1/p' $STDOUT)
+if [ "$STATUS" = "Optimal" ]; then
+    echo $(sed -n -e 's/^[ \t]\+Timing[ \t]\+\([^ ]\+\).\+$/\1/p' $STDOUT)
+elif [ "$STATUS" = "Time limit reached" ]; then
+    echo $BOUND
+else
+    error "Unknown status: $(grep '^[ \t]\+Status[ \t]\+' $STDOUT)"
+fi
+# We are done with our duty. Clean files and exit with 0 (no error).
+rm -f "$PARFILE" "${STDOUT}" "${STDERR}"
+exit 0

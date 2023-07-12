@@ -1,0 +1,44 @@
+# Presolve option: "off", "choose" or "on"
+# [type: string, advanced: false, default: "choose"]
+presolve "presolve=" c (off, choose, on)
+
+# Run IPM crossover: "off", "choose" or "on"
+# [type: string, advanced: false, default: "on"]
+run_crossover "run_crossover=" c (off, choose, on)
+
+# Strategy for simplex solver 0 => Choose; 1 => Dual (serial); 2 => Dual (PAMI); 3 => Dual (SIP); 4 => Primal
+# [type: integer, advanced: false, range: {0, 4}, default: 1]
+simplex_strategy "simple_strategy=" c (0,1,2,3,4)
+
+# Simplex scaling strategy: off / choose / equilibration / forced equilibration / max value 0 / max value 1 (0/1/2/3/4/5)
+# [type: integer, advanced: false, range: {0, 5}, default: 1]
+simplex_scale_strategy "simplex_scale_strategy=" c (0,1,2,3,4,5)
+
+# Strategy for simplex dual edge weights: Choose / Dantzig / Devex / Steepest Edge (-1/0/1/2)
+# [type: integer, advanced: false, range: {-1, 2}, default: -1]
+simplex_dual_edge_weight_strategy "simplex_dual_edge_weight_strategy=" c (-1,0,1,2)
+
+# Strategy for simplex primal edge weights: Choose / Dantzig / Devex / Steepest Edge (-1/0/1/2)
+# [type: integer, advanced: false, range: {-1, 2}, default: -1]
+simplex_primal_edge_weight_strategy "simplex_primal_edge_weight_strategy=" c (-1,0,1,2)
+
+# Maximal age of dynamic LP rows before they are removed from the LP relaxation in the MIP solver
+# [type: integer, advanced: false, range: {0, 32767}, default: 10]
+mip_lp_age_limit "mip_lp_age_limit="" i (0, 1000)
+
+# Maximal age of rows in the MIP solver cutpool before they are deleted
+# [type: integer, advanced: false, range: {0, 1000}, default: 30]
+mip_pool_age_limit "mip_pool_age_limit=" i (0, 1000)
+
+# Soft limit on the number of rows in the MIP solver cutpool for dynamic age adjustment
+# [type: integer, advanced: false, range: {1, 2147483647}, default: 10000]
+mip_pool_soft_limit "mip_pool_soft_limit=" i,log (1, 100000000)
+
+# Minimal number of observations before MIP solver pseudo costs are considered reliable
+# [type: integer, advanced: false, range: {0, 2147483647}, default: 8]
+mip_pscost_minreliable "mip_pscost_minreliable=" i (0, 100)
+
+# Effort spent for MIP heuristics
+# [type: double, advanced: false, range: [0, 1], default: 0.05]
+mip_heuristic_effort "mip_heuristic_effort=" r (0,1)
+
