@@ -86,9 +86,38 @@ find_scenario <- function(scenario_name)
   scenario
 }
 
-setup_scenario <- function(scenario_name)
+setup_acotsp <- function(install_dir)
+{
+  system2("make", args = "-C ./algorithms/acotspqap/ acotsp")
+}
+
+download_untar <- function(url, exdir)
+{
+  if (fs::file_exists(exdir)) return()
+  tar_exts <- c(".tar.bz2", ".tar.gz", ".tgz", ".tar.xz")
+  fileext <- tar_exts[endsWith(url, tar_exts)]
+  with_tempfile("tf", fileext = fileext, {
+        download.file(ulr, destfile=tf)
+        untar(tf, exdir = exdir, restore_times = FALSE, verbose = TRUE)
+  })
+}
+
+setup_tsp_rue_2000 <- function(install_dir)
+{
+  withr::with_dir("./instances/tsp/tsp-rue-2000/", {
+    download_untar("https://iridia.ulb.ac.be/irace/files/tsp-instances-training.tar.bz2", exdir = "./train")
+    download_untar("https://iridia.ulb.ac.be/irace/files/tsp-instances-training.tar.bz2", exdir = "./test")
+  })
+}
+
+setup_scenario <- function(scenario_name, install_dir)
 {
   scenario <- find_scenario(scenario_name)
+  if (scenario_name == "acotsp-tsp-rue-2000") {
+    setup_acotsp(install_dir)
+    setup_tsp_rue_2000(install_dir)
+  } else if (scenario_name == "acoqap-qap-rs-00")
+  acotsp-tsp-rue-2000
   system2(file.path("./setups", paste0(scenario_name, ".sh")), 
   stdout = "", stderr = "", timeout = 120)
   scenario
