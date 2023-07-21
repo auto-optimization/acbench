@@ -434,11 +434,11 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
        self$do_run <- local_run
      }
    },
-   save_setup = function(scenarios, tuners, tuner_versions, nreps) {
+   save_setup = function(scenarios, tuners, tuner_versions, reps) {
      self$saved_setup <- list(scenarios = scenarios,
                              tuners = tuners,
                              tuner_versions = tuner_versions,
-                             nreps = nreps)
+                             reps = reps)
    },
    run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
      self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
@@ -456,12 +456,12 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
      self$run_scenario(scenarios = self$saved_setup$scenarios,
                        tuners = self$saved_setup$tuners,
                        tuner_versions = self$saved_setup$tuner_versions,
-                       nreps = self$saved_setup$nreps)
+                       reps = self$saved_setup$reps)
    },
 
-   run_scenario = function(scenarios, tuners, tuner_versions, nreps) {
+   run_scenario = function(scenarios, tuners, tuner_versions, reps) {
      if (length(reps) == 1)
-       reps <- seq_len(nreps)
+       reps <- seq_len(reps)
      
      exec_dir <- self$exec_dir
      install_dir <- self$install_dir
@@ -526,6 +526,6 @@ read_setup_file <- function(file)
   acbench <- ACBench$new(exec_dir = exec_dir, install_dir = install_dir,
                          cluster = cluster, ncpus = ncpus)
   
-  acbench$save_setup(scenarios, tuners, tuner_versions, nreps)
+  acbench$save_setup(scenarios, tuners, tuner_versions, reps)
   acbench
 }

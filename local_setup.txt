@@ -13,6 +13,6 @@ tuner_versions = "
                git
                3.5
 "
-nreps = 10
+reps = 10
 cluster = FALSE
 ncpus = 3

@@ -8,11 +8,11 @@ highs-153-mip-regions200
 "
 exec_dir = "~/scratch/execdir"
 install_dir = "~/scratch/install/"
-tuner = "irace"
+tuners = "irace"
 tuner_versions = "
 git
 3.5
 "
-nreps = 10
+reps = 10
 cluster = TRUE
 ncpus = 12
