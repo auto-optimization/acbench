@@ -110,7 +110,6 @@ setup_highs_v153 <- function()
     if (!fs::file_exists("./HiGHS-1.5.3/")) {
       download_uncompress('https://github.com/ERGO-Code/HiGHS/archive/refs/tags/v1.5.3.tar.gz',
                           exdir = ".") # files = c("Makefile", "README.txt", "src/"))
-      # mv src-lkh-original/Makefile src-lkh-original/README.txt src-lkh-original/src -t .
     }
     srcdir <- file.path(getwd(), "HiGHS-1.5.3")
     install_dir <- getwd()
