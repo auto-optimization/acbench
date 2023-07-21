@@ -6,7 +6,7 @@ DEBUG=-O3 -g
 DEBUG=-O2 -flto -g0
 
 STATIC=
-STATIC=-static 
+#STATIC=-static 
 NUMA=1
 WSIZE:=$(shell if [ `uname -m` = 'x86_64' ] ; then echo 64; else echo 32; fi )
 
