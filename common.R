@@ -49,7 +49,7 @@ get_tuner_executable <- function(install_dir, tool, version)
 
 get_irace_cmdline <- function(scenario_file, exec_dir, seed, ncpus = NULL, test = NULL)
 {
-  args <- c("-s", scenario_file, "--exec-dir", exec_dir, "--seed", seed)
+  args <- c("-s", scenario_file, "--exec-dir", exec_dir, "--seed", seed, "--test-num-elites", "0")
   if (!is.null(ncpus))
     args <- c(args, "--parallel", ncpus)
   if (!is.null(test))
