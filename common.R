@@ -123,7 +123,10 @@ setup_highs_v153 <- function()
     })
     # We do not need these directories.
     fs::dir_delete(file.path(install_dir, "include"))
-    fs::dir_delete(file.path(install_dir, "lib"))
+    if (fs::dir_exists(file.path(install_dir, "lib64")))
+        fs::dir_delete(file.path(install_dir, "lib64"))
+    if (fs::dir_exists(file.path(install_dir, "lib")))
+        fs::dir_delete(file.path(install_dir, "lib"))
   })
 }
 
