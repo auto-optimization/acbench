@@ -30,7 +30,7 @@ CONFIG_PARAMS=$(echo $* | sed 's/ /\n/g')
 
 ## Find our own location.
 BINDIR=$(dirname "$(readlink -f $0)")
-EXE="${BINDIR}/LKH"
+EXE="${BINDIR}/src-lkh-original/LKH"
 if [ ! -x "$(command -v ${EXE})" ]; then
     error "${EXE}: not found or not executable (pwd: $(pwd))"
 fi
@@ -70,5 +70,5 @@ fi
 # Print it!
 echo "$COST"
 # We are done with our duty. Clean files and exit with 0 (no error).
-#rm -f "$PARFILE" "${STDOUT}" "${STDERR}"
+rm -f "$PARFILE" "${STDOUT}" "${STDERR}"
 exit 0

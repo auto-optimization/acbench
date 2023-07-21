@@ -31,13 +31,8 @@ CONFIG_PARAMS=$(echo $* | sed 's/ /\n/g')
 
 ## Find our own location.
 BINDIR=$(dirname "$(readlink -f $0)")
-if [ -z "$ACBENCH_INSTALL_DIR" ]; then
-    ACBENCH_INSTALL_DIR=$(realpath $BINDIR/../../install)
-fi
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ACBENCH_INSTALL_DIR/lib
-
-EXE="${ACBENCH_INSTALL_DIR}/bin/highs"
-
+#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${BINDIR}/lib
+EXE="${BINDIR}/bin/highs"
 if [ ! -x "$(command -v ${EXE})" ]; then
     error "${EXE}: not found or not executable (pwd: $(pwd))"
 fi
@@ -67,9 +62,10 @@ fi
 
 STATUS=$(sed -n -e 's/^[ \t]\+Status[ \t]\+\(Optimal\|Time limit reached\)[ \t]*$/\1/p' $STDOUT)
 if [ "$STATUS" = "Optimal" ]; then
-    echo $(sed -n -e 's/^[ \t]\+Timing[ \t]\+\([^ ]\+\).\+$/\1/p' $STDOUT)
+    TIME=$(sed -n -e 's/^[ \t]\+Timing[ \t]\+\([^ ]\+\).\+$/\1/p' $STDOUT)
+    echo $TIME $TIME
 elif [ "$STATUS" = "Time limit reached" ]; then
-    echo $BOUND
+    echo $BOUND $BOUND
 else
     error "Unknown status: $(grep '^[ \t]\+Status[ \t]\+' $STDOUT)"
 fi

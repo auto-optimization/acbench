@@ -1,0 +1,53 @@
+###################################################### -*- mode: r -*- #####
+## Scenario setup for Iterated Race (iRace).
+############################################################################
+## To use the default value of a parameter of iRace, simply do not set
+## the parameter (comment it out in this file, and do not give any
+## value on the command line).
+
+## File that contains the description of the parameters.
+parameterFile = "../algorithms/highs-v153/parameters.txt"
+
+## Executable called for each configuration that executes the target algorithm
+## to be tuned. See the templates and examples provided.
+targetRunner = "../algorithms/highs-v153/target-runner-cap"
+
+## Directory where tuning instances are located, either absolute path or
+## relative to current directory.
+trainInstancesDir = "../data/mip/Regions200/"
+
+## File that contains a list of training instances and optionally additional
+## parameters for them. If `trainInstancesDir` is provided, `irace` will
+## search for the files in this folder.
+trainInstancesFile = "../instances/mip/Regions200/training.txt"
+
+## Directory where testing instances are located, either absolute or relative
+## to current directory.
+testInstancesDir = trainInstancesDir
+
+## File containing a list of test instances and optionally additional
+## parameters for them.
+testInstancesFile = "../instances/mip/Regions200/testing.txt"
+
+## Maximum total execution time for the executions of `targetRunner`.
+## `targetRunner` must return two values: cost and time. This value and the
+## one returned by `targetRunner` must use the same units (seconds, minutes,
+## iterations, evaluations, ...).
+maxTime = 86400
+
+## Indicates the number of decimal places to be considered for the
+## real parameters.
+digits = 4
+
+## Maximum execution bound for `targetRunner`. It must be specified when
+## capping is enabled.
+boundMax = 60
+
+## Enable the use of adaptive capping, a technique designed for minimizing the
+## computation time of configurations. Capping is enabled by default if
+## `elitist` is active, `maxTime > 0` and `boundMax > 0`.
+capping = 1 # This is not needed for irace >= 3.5 but previous versions required it.
+
+## END of scenario file
+############################################################################
+

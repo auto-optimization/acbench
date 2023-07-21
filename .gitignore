@@ -32,13 +32,11 @@
 *.out
 *.app
 
-instances/qap/RS
-instances/tsp/tsp-rue-2000/train/
-instances/tsp/tsp-rue-2000/test/
 .future/
 execdir/
 install/
+data/
 algorithms/runsolver/runsolver
-algorithms/lkh-209/LKH
-algorithms/lkh-209/src/
-
+algorithms/lkh-209/src-lkh-original/
+algorithms/highs-v153/HiGHS-1.5.3/
+algorithms/highs-v153/bin/

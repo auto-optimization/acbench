@@ -15,9 +15,9 @@ targetRunner = "../algorithms/lkh-209/target-runner"
 ## Directory where tuning instances are located, either absolute path or
 ## relative to current directory.
 # Download the instances from: http://iridia.ulb.ac.be/irace/files/tsp-instances-training.tar.bz2
-trainInstancesDir = "../instances/tsp/tsp-rue-2000/train/"
+trainInstancesDir = "../data/tsp/tsp-rue-2000/train/"
 # Download the instances from: http://iridia.ulb.ac.be/irace/files/tsp-instances-testing.tar.bz2
-testInstancesDir = "../instances/tsp/tsp-rue-2000/test/"
+testInstancesDir = "../data/tsp/tsp-rue-2000/test/"
 
 ## The maximum number of runs (invocations of targetRunner) that will
 ## performed. It determines the (maximum) budget of experiments for the tuning.

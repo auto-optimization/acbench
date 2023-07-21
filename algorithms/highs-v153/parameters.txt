@@ -8,7 +8,7 @@ run_crossover "run_crossover=" c (off, choose, on)
 
 # Strategy for simplex solver 0 => Choose; 1 => Dual (serial); 2 => Dual (PAMI); 3 => Dual (SIP); 4 => Primal
 # [type: integer, advanced: false, range: {0, 4}, default: 1]
-simplex_strategy "simple_strategy=" c (0,1,2,3,4)
+simplex_strategy "simplex_strategy=" c (0,1,2,3,4)
 
 # Simplex scaling strategy: off / choose / equilibration / forced equilibration / max value 0 / max value 1 (0/1/2/3/4/5)
 # [type: integer, advanced: false, range: {0, 5}, default: 1]
@@ -24,7 +24,7 @@ simplex_primal_edge_weight_strategy "simplex_primal_edge_weight_strategy=" c (-1
 
 # Maximal age of dynamic LP rows before they are removed from the LP relaxation in the MIP solver
 # [type: integer, advanced: false, range: {0, 32767}, default: 10]
-mip_lp_age_limit "mip_lp_age_limit="" i (0, 1000)
+mip_lp_age_limit "mip_lp_age_limit=" i (0, 1000)
 
 # Maximal age of rows in the MIP solver cutpool before they are deleted
 # [type: integer, advanced: false, range: {0, 1000}, default: 30]

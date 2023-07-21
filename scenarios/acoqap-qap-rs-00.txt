@@ -14,7 +14,7 @@ targetRunner = "../algorithms/acotspqap/target-runner-acoqap"
 
 ## Directory where tuning instances are located, either absolute path or
 ## relative to current directory.
-trainInstancesDir = "../instances/qap/"
+trainInstancesDir = "../data/qap/"
 trainInstancesFile = "../instances/qap/instances-RS-00-train.txt"
 testInstancesDir = trainInstancesDir
 testInstancesFile = "../instances/qap/instances-RS-00-test.txt"

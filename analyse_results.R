@@ -7,7 +7,18 @@ plot_cost <- function(res)
   ggplot(res, aes(x=tuner, y=cost)) + geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) + geom_jitter(width = 0.2, alpha=0.75)
 }
 
+
+dt <- readRDS("train_results.rds")
+my_summary <- function(x) list(mean=mean(x), sd = sd(x))
+dt[, as.list(unlist(lapply(.SD, my_summary))), by = c("scenario", "tuner")]
+
+dt <- melt(dt, id.vars = c("scenario", "tuner", "rep"))
+ggplot(dt, aes(x=value, y=scenario, fill=tuner)) + 
+  geom_boxplot() + facet_wrap(~variable, scales="free_x")
+
+
 results <- readRDS("test_results.rds")
+
 
 tabcost <- rbindlist(lapply(results, `[`, j = c("scenario", "tuner", "rep", "cost", "instance"), with = FALSE))
 tabcost[, rank_cost := rank(cost), by= list(scenario, instance)]

@@ -1,0 +1,18 @@
+scenarios = "
+acotsp-tsp-rue-2000
+acoqap-qap-rs-00
+acotsp-tsp-rue-2000-default
+acoqap-qap-rs-00-default
+#lkh-209-tsp-rue-2000
+#highs-153-mip-regions200
+"
+exec_dir = "./execdir"
+install_dir = "./install/"
+tuners = "irace"
+tuner_versions = "
+               git
+               3.5
+"
+nreps = 10
+cluster = FALSE
+ncpus = 3
