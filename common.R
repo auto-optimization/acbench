@@ -65,8 +65,8 @@ sge_run <- function(ncpus) {
     launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
     brew::brew("launch_sge.tmpl", output = launch_file)
     fs::file_chmod(launch_file, "u+x")
-    cat("sytem2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
-    #system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
+    #cat("sytem2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
+    system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
     fs::file_delete(launch_file)
   }
 }
@@ -506,8 +506,7 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
        fs::dir_create(test_exec_dir)
      
      confs <- read_configurations(scenario_name, metadata = FALSE)
-     confs_file <- tempfile(pattern = scenario_name, fileext = ".txt")
-     cat(confs_file, "\n")
+     confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
      write.table(confs, file = confs_file, row.names = FALSE)  
      
      exe <- get_tuner_executable(install_dir, "irace", "git")
