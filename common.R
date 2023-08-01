@@ -241,6 +241,7 @@ read_configurations <- function(scenario_name, file = "best_confs.rds", metadata
   drop_cols <- colnames(x)
   drop_cols <- drop_cols[startsWith(drop_cols, ".")]
   x[, (drop_cols):=NULL]
+  unique(x) # Remove duplicated rows.
 }
 
 
@@ -307,7 +308,6 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
     set(confs, j=c(".PARENT.", colnames(confs)[!startsWith(colnames(confs), ".")]), value=NULL)
     results <- results[confs, on=c(configuration_id=".ID.")]
     colnames(results) <- sub(".", "", colnames(results), fixed=TRUE)
-    # FIXME: merge
     old <- res[[scenario_name]]
     if (!is.null(old)) {
       results <- rbind(old[!results, on = c("scenario", "tuner", "rep")], results)
@@ -504,16 +504,16 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
        cli_abort("exec_dir {.filename {exec_dir}} not found")
      exe <- get_tuner_executable(install_dir, "irace", "git")
      for (scenario_name in scenarios) {
-     jobname <- paste0("test-", scenario_name)
-     test_exec_dir <- file.path(exec_dir, jobname)
-     if (!fs::file_exists(test_exec_dir))
-       fs::dir_create(test_exec_dir)
-     confs <- read_configurations(scenario_name, metadata = FALSE)
-     confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
-     write.table(confs, file = confs_file, row.names = FALSE)  
-     
-     scenario <- find_scenario(scenario_name)
-     self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
+       jobname <- paste0("test-", scenario_name)
+       test_exec_dir <- file.path(exec_dir, jobname)
+       if (!fs::file_exists(test_exec_dir))
+         fs::dir_create(test_exec_dir)
+       confs <- read_configurations(scenario_name, metadata = FALSE)
+       confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
+       write.table(confs, file = confs_file, row.names = FALSE)  
+       
+       scenario <- find_scenario(scenario_name)
+       self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
      }
    }
    
