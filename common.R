@@ -360,7 +360,7 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
   invisible(results)
 }
 
-collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", verbose = FALSE)
+collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", verbose = TRUE)
 {
   res <- sapply(scenarios, function(scenario_name) {
     scenario_path <- file.path(exec_dir, scenario_name)
@@ -497,23 +497,24 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
      }
    },
    
-   run_test = function(scenario_name) {
+   run_test = function(scenarios) {
      exec_dir <- self$exec_dir
      install_dir <- self$install_dir
      if (!fs::file_exists(exec_dir))
        cli_abort("exec_dir {.filename {exec_dir}} not found")
+     exe <- get_tuner_executable(install_dir, "irace", "git")
+     for (scenario_name in scenarios) {
      jobname <- paste0("test-", scenario_name)
      test_exec_dir <- file.path(exec_dir, jobname)
      if (!fs::file_exists(test_exec_dir))
        fs::dir_create(test_exec_dir)
-     
      confs <- read_configurations(scenario_name, metadata = FALSE)
      confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
      write.table(confs, file = confs_file, row.names = FALSE)  
      
-     exe <- get_tuner_executable(install_dir, "irace", "git")
      scenario <- find_scenario(scenario_name)
      self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
+     }
    }
    
  ))

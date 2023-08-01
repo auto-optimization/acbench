@@ -1,13 +1,10 @@
 source("common.R")
-setup_file <- "local_setup.txt"
+setup_file <- "sge_setup.txt"
 acbench <- read_setup_file(setup_file)
 res <- collect_train_results(acbench$exec_dir,
                              acbench$saved_setup$scenarios)
 
-#collect_best_confs(exec_dir, scenarios)
 collect_best_confs(acbench$exec_dir,
-                   acbench$saved_setup$scenarios)
+                   acbench$saved_setup$scenarios, verbose = TRUE)
 
-for (scenario_name in scenarios) {
-  acbench$run_test(scenario_name)
-}
+acbench$run_test(acbench$saved_setup$scenarios)
