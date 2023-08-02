@@ -254,7 +254,7 @@ read_configurations <- function(scenario_name, file = "best_confs.rds", metadata
 
   
 read_scenarios_file <- function(file)
-  scan(scenarios_file, what = character(), strip.white=TRUE, comment.char = "#", quiet = TRUE)
+  scan(file, what = character(), strip.white=TRUE, comment.char = "#", quiet = TRUE)
 
 
 read_completed_logfile <- function(p, has_testing = FALSE)
@@ -306,14 +306,23 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
   
   for (scenario_name in scenarios) {
     p <- file.path(exec_dir, paste0("test-", scenario_name))
+    if (!fs::file_exists(file.path(p, "irace.Rdata"))) {
+      	 cli_warn("File {.filename {file.path(p, 'irace.Rdata')}} not found ! Skipping ...")
+         next
+    }
     log <- read_completed_logfile(p, has_testing = TRUE)
     results <- get_irace_test_results(log)
     allConfigurations <- as.data.table(log$allConfigurations)
     
     confs <- read_configurations(scenario_name)
+    if (verbose) {
+      cli_inform("Processing {scenario_name} ...\n")
+    }
+    # Assign each configuration to its corresponding .scenario, .tuner, .rep.
     confs <- allConfigurations[confs, on = colnames(confs)[!startsWith(colnames(confs), ".")]]
+    # Keep only .ID., .scenario, .tuner, .rep.
     set(confs, j=c(".PARENT.", colnames(confs)[!startsWith(colnames(confs), ".")]), value=NULL)
-    results <- results[confs, on=c(configuration_id=".ID.")]
+    results <- merge(results, confs, by.x = "configuration_id", by.y=".ID.", allow.cartesian=TRUE)
     colnames(results) <- sub(".", "", colnames(results), fixed=TRUE)
     old <- res[[scenario_name]]
     if (!is.null(old)) {
@@ -321,8 +330,10 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
     }
     res[[scenario_name]] <- results
   }
-  if (!is.null(file))
+  if (!is.null(file)) {
     saveRDS(res, file = file)
+    cli_inform("Results saved to {.filename {file}}")
+  }   
   invisible(res)
 }
 
@@ -351,25 +362,29 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
     cbind(scenario = as.character(scenario_name), tuner = as.character(tuner), rep = reps,
           res)
   }, simplify = FALSE)
+  results <- rbindlist(results, use.names=TRUE)
 
   old <- NULL
   if (!is.null(file) && fs::file_exists(file))
     old <- readRDS(file = file)
-
-  results <- rbindlist(results, use.names=TRUE)
   
   if (!is.null(old)) {
     results <- rbind(old[!results, on = c("scenario", "tuner", "rep")], results)
   }
-
-  if (!is.null(file))
+  if (!is.null(file)) {
     saveRDS(results, file = file)
+    cli_inform("Results saved to {.filename {file}}")
+  }
   invisible(results)
 }
 
 collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", verbose = TRUE)
 {
-  res <- sapply(scenarios, function(scenario_name) {
+  res <- list()
+  if (fs::file_exists(file))
+    res <- readRDS(file = file)
+
+  for (scenario_name in scenarios) {
     scenario_path <- file.path(exec_dir, scenario_name)
     paths <- fs::dir_ls(scenario_path, type="directory")
     tuner <- sub("-[0-9]+$", "", fs::path_rel(paths, start = scenario_path), perl=TRUE)
@@ -380,13 +395,21 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
                     paste0(collapse=", ", reps[x == tuner])))
       }
     }
-    conf <- lapply(paths, get_best_configuration)
-    names(conf) <- NULL
-    cbind(.scenario = as.character(scenario_name), .tuner = as.character(tuner),
-          .rep = reps, rbindlist(conf, use.names=TRUE))
-  }, simplify = FALSE)
-  if (!is.null(file))
+    results <- lapply(paths, get_best_configuration)
+    names(results) <- NULL
+    results <- data.table(.scenario = as.character(scenario_name), .tuner = as.character(tuner),
+                       .rep = reps, rbindlist(results, use.names=TRUE))
+    old <- res[[scenario_name]]
+    if (!is.null(old)) {
+          results <- rbind(old[!results, on = c(".scenario", ".tuner", ".rep")], results)
+    }
+    res[[scenario_name]] <- results
+  }
+
+  if (!is.null(file)) {
     saveRDS(res, file = file)
+    cli_inform("Results saved to {.filename {file}}")
+  }
   invisible(res)
 }
 
