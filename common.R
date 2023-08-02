@@ -278,6 +278,7 @@ get_best_configuration <- function(p)
 
 get_irace_test_results <- function(res)
 {
+  require_or_install(irace)
   if (is.character(res)) {
     res <- read_completed_logfile(res, has_testing = TRUE)
   } else if (!irace::has_testing_data(res)) {
@@ -299,7 +300,6 @@ get_irace_test_results <- function(res)
 
 collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds", verbose = TRUE)
 {
-  require_or_install(irace)
   res <- list()
   if (fs::file_exists(file))
     res <- readRDS(file = file)
