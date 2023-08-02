@@ -46,6 +46,11 @@ get_tuner_executable <- function(install_dir, tool, version)
   switch(tool,
          "irace" = get_installed_irace(install_dir, version))
 
+file_safe_delete <- function(path)
+{
+  if (fs::file_exists(path))
+    fs::file_delete(path)
+}
 
 get_irace_cmdline <- function(scenario_file, exec_dir, seed, ncpus = NULL, test = NULL)
 {
@@ -66,6 +71,8 @@ sge_run <- function(ncpus) {
     brew::brew("launch_sge.tmpl", output = launch_file)
     fs::file_chmod(launch_file, "u+x")
     #cat("sytem2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
+    file_safe_delete(outfile)
+    file_safe_delete(errfile)
     system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
     fs::file_delete(launch_file)
   }
