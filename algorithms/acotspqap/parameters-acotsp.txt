@@ -10,13 +10,13 @@ nnants          "--nnants "          i          (5, 50)
 localsearch     "--localsearch "     c  	(0, 1, 2, 3)
 nnls            "--nnls "            i  	(5, 50)			| localsearch != 0
 dlb             "--dlb "             c  	(0, 1) 			| localsearch != 0
-rasrank         "--rasranks "        i  	(1, 100) 		| algorithm %in% c("ras")
-elitistants     "--elitistants "     i  	(1, 750) 		| algorithm %in% c("eas")
+rasrank         "--rasranks "        i  	(1, 100) 		| algorithm == "ras"
+elitistants     "--elitistants "     i  	(1, 750) 		| algorithm == "eas"
 phlimits        "--ph-limits "       c          (0, 1)                  | algorithm != "acs"
 pdec            "--pdec "            r          (0.001, 0.5) 		| phlimits == "1" & localsearch == 0
-schedulelen     "--schedule-length " i          (20, 500)               | algorithm %in% c("mmas")
-xi              "--xi "              r          (0.01, 1.00)            | algorithm %in% c("acs")
+schedulelen     "--schedule-length " i          (20, 500)               | algorithm == "mmas"
+xi              "--xi "              r          (0.01, 1.00)            | algorithm == "acs"
 restart         "--restart "         c          (never, always, "branch-factor", distance)
-restart_branch_factor "--restart-branch-factor " r (1.0, 2.0)    | restart == "branch-factor"
-restart_avg_distance  "--restart-avg-distance  "    r (0.01, 0.10)  | restart == "distance"
-restart_min_iterations "--restart-min-iterations "  i (1, 500)      | restart != "never"
+restart_branch_factor "--restart-branch-factor " r (1.0, 2.0)           | restart == "branch-factor"
+restart_avg_distance  "--restart-avg-distance  "    r (0.01, 0.10)      | restart == "distance"
+restart_min_iterations "--restart-min-iterations "  i (1, 500)          | restart != "never"
