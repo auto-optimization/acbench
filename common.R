@@ -197,8 +197,8 @@ setup_tsp_rue_2000 <- function()
 
 setup_qap_rs_00 <- function()
 {
-  exdir <- fs::path_abs("data/qap/RS")
-  if (!fs::file_exists(exdir)) {
+  exdir <- fs::path_abs("data/qap")
+  if (!fs::file_exists(file.path(exdir, "RS"))) {
     download_uncompress("https://github.com/MLopez-Ibanez/ACOTSPQAP/raw/master/irace/qap/Instances/RS-0.0.tar.xz",
                         exdir = exdir)
   }
