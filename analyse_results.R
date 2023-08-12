@@ -18,8 +18,6 @@ ggplot(dt, aes(x=value, y=scenario, fill=tuner)) +
 
 
 results <- readRDS("test_results.rds")
-
-
 tabcost <- rbindlist(lapply(results, `[`, j = c("scenario", "tuner", "rep", "cost", "instance"), with = FALSE))
 tabcost[, rank_cost := rank(cost), by= list(scenario, instance)]
 tabsum <- tabcost[, list(cost_mean = mean(cost), cost_sd = sd(cost),

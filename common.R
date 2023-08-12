@@ -562,3 +562,23 @@ read_setup_file <- function(file)
   acbench$save_setup(scenarios, tuners, tuner_versions, reps)
   acbench
 }
+
+report <- function(path = "./", filename = "report",
+                   interactive = base::interactive())
+{
+  require_or_install(rmarkdown)
+  require_or_install(knitr)
+  require_or_install(DT)
+  # render() already checks this but the error is not clear enough.
+  if (! rmarkdown::pandoc_available("1.12.3", error = FALSE))
+    cli_abort("pandoc version 1.12.3 or higher is required and was not found. ",
+              "You can install the RStudio IDE, which has bundled a version of Pandoc. ",
+              "Otherwise, follow the instructions at https://pandoc.org/installing.html .")
+  
+  filename <- fs::path_abs(fs::path_expand(fs:path_ext_set(filename, "html")))
+  cli_alert_info("Creating file '{.file {filename}}'.\n")
+  rmarkdown::render(input=file.path("template", "report_html.Rmd"),
+                    output_file=filename, clean = FALSE)
+  if (interactive) utils::browseURL(filename)
+  filename
+}
