@@ -574,10 +574,14 @@ report <- function(path = "./", filename = "report",
     cli_abort("pandoc version 1.12.3 or higher is required and was not found. ",
               "You can install the RStudio IDE, which has bundled a version of Pandoc. ",
               "Otherwise, follow the instructions at https://pandoc.org/installing.html .")
+
+  path <- fs::path_abs(fs::path_expand(path))
+  if (!fs::file_exists(path))
+    cli_abort("path '{.file {path}}' does not exist")
   
-  filename <- fs::path_abs(fs::path_expand(fs:path_ext_set(filename, "html")))
+  filename <- fs::path_abs(fs::path_expand(fs::path_ext_set(filename, "html")))
   cli_alert_info("Creating file '{.file {filename}}'.\n")
-  rmarkdown::render(input=file.path("template", "report_html.Rmd"),
+  rmarkdown::render(input=file.path("templates", "report_html.Rmd"),
                     output_file=filename, clean = FALSE)
   if (interactive) utils::browseURL(filename)
   filename
