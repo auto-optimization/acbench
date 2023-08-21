@@ -87,8 +87,11 @@ readRDS_safe <- function(filename) {
 dt <- readRDS_safe(file.path(path, "train_results.rds"))
 
 # TODO, exclude columns like rep.
-my_summary <- function(x) list(mean=mean(x), sd = sd(x))
-train_summary <- dt[, as.list(unlist(lapply(.SD, my_summary))), by = c("scenario", "tuner")]
+my_summary <- function(x) list(mean=mean(x), sd=sd(x))
+train_summary <- dt[, as.list(unlist(lapply(.SD, length))), by = c("scenario", "tuner"), .SDcols="rep"]
+train_summary <- train_summary[
+  dt[, as.list(unlist(lapply(.SD, my_summary))), by = c("scenario", "tuner"), .SDcols = setdiff(colnames(dt), c("scenario", "tuner", "rep"))],
+  on = c("scenario", "tuner")]
 
 test_res <- readRDS_safe(file.path(path, "test_results.rds"))
 
@@ -103,7 +106,10 @@ show_table(train_summary, lengthMenu = c(20, 50, 100))
 ## Boxplot
 
 ```{r train-boxplot,fig.align="center", out.width="100%", echo=FALSE}
-dt <- melt(dt, id.vars = c("scenario", "tuner", "rep"))
+id_vars <- c("scenario", "tuner", "rep")
+num_cols <- setdiff(colnames(dt), id_vars)
+dt[, (num_cols):=lapply(.SD, as.numeric), .SDcols=num_cols]
+dt <- melt(dt, id.vars = id_vars)
 ggplot(dt, aes(x=value, y=scenario, fill=tuner)) +
   geom_boxplot() + facet_wrap(~variable, scales="free_x")
 ```
