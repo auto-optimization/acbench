@@ -86,6 +86,7 @@ readRDS_safe <- function(filename) {
 
 dt <- readRDS_safe(file.path(path, "train_results.rds"))
 
+# TODO, exclude columns like rep.
 my_summary <- function(x) list(mean=mean(x), sd = sd(x))
 train_summary <- dt[, as.list(unlist(lapply(.SD, my_summary))), by = c("scenario", "tuner")]
 
