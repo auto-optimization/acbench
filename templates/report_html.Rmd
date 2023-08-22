@@ -37,9 +37,12 @@ library(DT)
 if (!exists("interactive_plots")) interactive_plots <- base::interactive()
 # FIXME: Move show_table to the package so people can use it to create their
 # own reports.
+# ... modifies the `options` list: https://rstudio.github.io/DT/options.html
 show_table <- function(x, row.names = FALSE, search = FALSE, lengthMenu = NULL,
-                       searchHighlight = TRUE, dom='Blrtip', colorbar = NULL, style = list(), ...) {
-
+                       searchHighlight = TRUE, dom='Blrtip', colorbar = NULL, style = list(),
+                       fixedColumns = NULL)
+{
+  x <- as.data.frame(x)
   if (!interactive_plots) return(knitr::kable(x, row.names = row.names))
 
   if (search) dom <- sub("r", "fr", dom, fixed = TRUE)
@@ -50,23 +53,30 @@ show_table <- function(x, row.names = FALSE, search = FALSE, lengthMenu = NULL,
     if (nrow(x) <= pageLength) dom <- gsub("[lip]", "", dom) # autoHideNavigation
   }
   columnDefs <- list(list(className = 'dt-right', targets = "_all"))
+  extensions <- c('Buttons', 'KeyTable')
+  options <- list(keys = TRUE,
+                  searchHighlight = search,
+                  scrollX = TRUE,
+                  pageLength=pageLength,
+                  lengthMenu = lengthMenu,
+                  dom = dom,
+                  buttons = c('copy', 'csv'), #, 'colvis'),
+                  columnDefs = columnDefs)
+  if (!is.null(fixedColumns)) {
+    extensions <- c(extensions, 'FixedColumns')
+    options$fixedColumns <- fixedColumns
+  }
+  
   tab <- DT::datatable(x, rownames = row.names,
                        class = 'compact row-border hover',
                        autoHideNavigation = TRUE,
-                       extensions = c('Buttons', 'KeyTable'),
-                       options = list(
-                         keys = TRUE,
-                         searchHighlight = search,
-                         scrollX = TRUE,
-                         pageLength=pageLength,
-                         lengthMenu = lengthMenu,
-                         dom = dom,
-                         buttons = c('copy', 'csv'), #, 'colvis'),
-                         columnDefs = columnDefs)) %>% DT::formatStyle(colnames(x), fontSize='85%')
+                       extensions = extensions,
+                       options = options) %>% DT::formatStyle(colnames(x), fontSize='85%')
   for (col in colorbar) {
     if(!(col %in% colnames(x)))
       stop("Column ", col, " not found in table: ", paste0(colnames(x), collapse=", "))
     if (all(is.na(x[, col]))) next # Don't add colorbar if all are NA.
+    if (!is.numeric(x[, col])) next # Don't add colorbar unless is a numerical column
     tab <- DT::formatStyle(tab, columns = col,
                            background = DT::styleColorBar(range(x[, col], na.rm=TRUE), 'lightblue'),
                            backgroundSize = '98% 88%',
@@ -78,6 +88,7 @@ show_table <- function(x, row.names = FALSE, search = FALSE, lengthMenu = NULL,
   }
   tab
 }
+
 readRDS_safe <- function(filename) {
   if (!fs::file_exists(filename))
     cli_abort("'{.file {filename}} does not exist")
@@ -100,7 +111,9 @@ test_res <- readRDS_safe(file.path(path, "test_results.rds"))
 # Training results
 
 ```{r train_summary,fig.align="center", echo=FALSE}
-show_table(train_summary, lengthMenu = c(20, 50, 100))
+show_table(train_summary, lengthMenu = c(20, 50, 100), search = TRUE,
+           colorbar = colnames(train_summary), fixedColumns = list(leftColumns = 2)) %>%
+  DT::formatStyle("scenario","white-space"="nowrap")
 ```
 
 ## Boxplot
@@ -122,7 +135,7 @@ tabcost[, rank_cost := rank(cost), by= list(scenario, instance)]
 tabsum <- tabcost[, list(cost_mean = mean(cost), cost_sd = sd(cost),
                          cost_mean_rank = mean(rank_cost), cost_sd_rank = sd(rank_cost)),
                   by=list(scenario, tuner)]
-show_table(tabsum, lengthMenu = c(20, 50, 100))
+show_table(tabsum, lengthMenu = c(20, 50, 100), colorbar = colnames(tabsum), search = TRUE)
 ```
 
 ## Boxplot 

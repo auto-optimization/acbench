@@ -582,7 +582,7 @@ report <- function(path = "./", filename = "report",
   filename <- fs::path_abs(fs::path_expand(fs::path_ext_set(filename, "html")))
   cli_alert_info("Creating file '{.file {filename}}'.\n")
   rmarkdown::render(input=file.path("templates", "report_html.Rmd"),
-                    output_file=filename, clean = FALSE)
+                    output_file=filename, clean = TRUE)
   if (interactive) utils::browseURL(filename)
   filename
 }
