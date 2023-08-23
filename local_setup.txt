@@ -10,6 +10,7 @@ exec_dir = "./execdir"
 install_dir = "./install/"
 tuners = "irace"
 tuner_versions = "
+               git-datatable-clean
                git
                3.5
 "

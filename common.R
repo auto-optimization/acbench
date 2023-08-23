@@ -28,7 +28,10 @@ install_irace <- function(install_dir, version, reinstall = FALSE)
     fs::dir_create(lib)
     if (version == "git") {
       devtools::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib)
-    } else { 
+    } else if (startsWith(version, "git-")) {
+      branch <- sub("^git-", "", version)
+      devtools::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib, ref = branch)
+    } else  { 
       devtools::install_version("irace", version = version, upgrade = "never", lib = lib)
     }
   }
