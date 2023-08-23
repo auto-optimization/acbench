@@ -1,19 +1,27 @@
 # acbench
 Algorithm Configuration Benchmarks
 
+## Running
+
+ 1. Edit `01-run_scenario.R` to select the appropriate setup file and run it with `Rscript 01-run_scenario.R`
+ 2. Once all the experiments have finished, edit `02-collect_train_results.R` to select the appropriate setup file and run it.
+ 3. Run `03-run_test.R`
+ 4. Once all the experiments have finished, run `04-collect_test_results.R`
+ 5. Run `05-analyse_results.R` to generate a report.
+ 
 
 ## Adding a new benchmark
 
-1. Add the source code to `algorithms/` or a script `get.sh` that downloads (and possibly patches) the source code.
+ 1. Add a new scenario to `scenarios/`
 
-2. Add `parameters.txt`, `target-runner`, and (optionally) `default.txt`.
+ 2. Add the source code to `algorithms/` or add a function to `setups.R` that downloads and compiles the code.
 
-3. Instances
+ 3. Add `parameters.txt`, `target-runner`, and (optionally) `default.txt` to `algorithms/`
 
-4. Scenario
-
-5. Extend the setup script `setup` to handle the algorithm and the instances.
-   The setup script is called with the name of the scenario.
+ 3. Add problem instances under `instances/` or add a function to `setups.R` that downloads the instances.
+ 
+ 4. If you wish to run on a cluster, create a template similar to `launch_sge.tmpl`
+ 
    
 
 
