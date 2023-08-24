@@ -1,14 +1,16 @@
-library(devtools, quiet = TRUE)
-
 require_or_install <- function(package)
 {
  package <- as.character(substitute(package))
  if (!require(package, quiet = TRUE, character.only = TRUE)) {
-     devtools::install_cran(package, upgrade = "never")
+     if (package == "remotes") {
+        install.packages("remotes", repo = "https://cloud.r-project.org")
+     } else {
+        remotes::install_cran(package, upgrade = "never")
+     }
      require(package, quiet = TRUE, character.only = TRUE)
  }
 }
-
+require_or_install(remotes)
 require_or_install(R6)
 require_or_install(fs)
 require_or_install(cli)
@@ -27,12 +29,15 @@ install_irace <- function(install_dir, version, reinstall = FALSE)
   if (reinstall || !fs::file_exists(file.path(lib, "irace", "bin"))) {
     fs::dir_create(lib)
     if (version == "git") {
-      devtools::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib)
+      install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib)
     } else if (startsWith(version, "git-")) {
-      branch <- sub("^git-", "", version)
-      devtools::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib, ref = branch)
+      branch <- sub("git-", "", version, fixed = TRUE)
+      cat(sprintf('remotes::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = "%s", ref = "%s")\n',
+lib, branch))
+      options(download.file.method = "libcurl")
+      install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib, ref = branch)
     } else  { 
-      devtools::install_version("irace", version = version, upgrade = "never", lib = lib)
+      install_version("irace", version = version, upgrade = "never", lib = lib)
     }
   }
   lib

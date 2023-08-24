@@ -10,9 +10,10 @@ exec_dir = "~/scratch/execdir"
 install_dir = "~/scratch/install/"
 tuners = "irace"
 tuner_versions = "
+git-872f4aee3eb824626025e695a46f20f95c65f74f
 #git
 #3.5
-3.4
+#3.4
 "
 reps = 10
 cluster = TRUE
