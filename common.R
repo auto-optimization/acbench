@@ -1,14 +1,14 @@
 require_or_install <- function(package)
 {
- package <- as.character(substitute(package))
- if (!require(package, quiet = TRUE, character.only = TRUE)) {
-     if (package == "remotes") {
-        install.packages("remotes", repo = "https://cloud.r-project.org")
-     } else {
-        remotes::install_cran(package, upgrade = "never")
-     }
-     require(package, quiet = TRUE, character.only = TRUE)
- }
+  package <- as.character(substitute(package))
+  if (!require(package, quiet = TRUE, character.only = TRUE)) {
+    if (package == "remotes") {
+      install.packages("remotes", repo = "https://cloud.r-project.org")
+    } else {
+      remotes::install_cran(package, upgrade = "never")
+    }
+    require(package, quiet = TRUE, character.only = TRUE)
+  }
 }
 require_or_install(remotes)
 require_or_install(R6)
@@ -32,9 +32,7 @@ install_irace <- function(install_dir, version, reinstall = FALSE)
       install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib)
     } else if (startsWith(version, "git-")) {
       branch <- sub("git-", "", version, fixed = TRUE)
-      cat(sprintf('remotes::install_github("MLopez-Ibanez/irace", upgrade = "never", lib = "%s", ref = "%s")\n',
-lib, branch))
-      options(download.file.method = "libcurl")
+      # options(download.file.method = "libcurl")
       install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib, ref = branch)
     } else  { 
       install_version("irace", version = version, upgrade = "never", lib = lib)
@@ -111,29 +109,28 @@ download_uncompress <- function(url, exdir, flat = FALSE)
 {
   exts <- c(".tar.bz2", ".tar.gz", ".tgz", ".tar.xz", ".zip")
   fileext <- exts[endsWith(url, exts)]
-  withr::with_tempfile("tf", fileext = fileext, {
-    download.file(url, destfile=tf)
-    if (fileext == ".zip") {
-      unzip(tf, exdir = exdir, junkpaths = flat)
-    } else {
-      untar(tf, exdir = exdir, restore_times = FALSE, verbose = TRUE)
-      if (flat) {
-        files <- untar(tf, list=TRUE)
-        withr::with_dir(exdir, {
-          for (p in files) {
-            if (fs::is_file(p)) {
-              fs::file_move(p, ".")
-            }
+  tf <- local_tempfile(fileext = fileext)
+  download.file(url, destfile=tf)
+  if (fileext == ".zip") {
+    unzip(tf, exdir = exdir, junkpaths = flat)
+  } else {
+    untar(tf, exdir = exdir, restore_times = FALSE, verbose = TRUE)
+    if (flat) {
+      files <- untar(tf, list=TRUE)
+      withr::with_dir(exdir, {
+        for (p in files) {
+          if (fs::is_file(p)) {
+            fs::file_move(p, ".")
           }
-          paths <- fs::dir_ls(".", type="directory")
-          for (p in paths) {
-            n <- length(fs::dir_ls(p, recurse = TRUE, type ="file"))
-            if (n == 0L) fs::dir_delete(p)
-          }
-        })
-      }
+        }
+        paths <- fs::dir_ls(".", type="directory")
+        for (p in paths) {
+          n <- length(fs::dir_ls(p, recurse = TRUE, type ="file"))
+          if (n == 0L) fs::dir_delete(p)
+        }
+      })
     }
-  })
+  }
 }
 
 make_jobname <- function(scenario_name, tuner, tuner_version, rep)
