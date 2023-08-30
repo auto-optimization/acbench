@@ -16,6 +16,7 @@ require_or_install(fs)
 require_or_install(cli)
 require_or_install(withr)
 require_or_install(data.table)
+setDTthreads(threads = 1)
 # Debugging:
 #require_or_install(debugme)
 #Sys.setenv(DEBUGME = "batchtools")
@@ -149,8 +150,6 @@ read_configurations <- function(scenario_name, file = "best_confs.rds", metadata
   unique(x) # Remove duplicated rows.
 }
 
-
-  
 read_scenarios_file <- function(file)
   scan(file, what = character(), strip.white=TRUE, comment.char = "#", quiet = TRUE)
 
@@ -239,6 +238,7 @@ get_train_summary <- function(p)
 {
   res <- read_completed_logfile(p)
   res <- irace::irace_summarise(res)
+  cat(sep="", "Summarised '", p, "'\n")
   as.data.table(res[c("n_iterations", "n_instances", "n_experiments", "time_targetrunner",
                       "time_cpu_total", "time_wallclock")])
 }
@@ -256,17 +256,20 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
                     paste0(collapse=", ", reps[x == tuner])))
       }
     }
-    res <- data.table::rbindlist(lapply(paths, get_train_summary))
+    summaries <- lapply(paths, get_train_summary)
+    res <- data.table::rbindlist(summaries)
     cbind(scenario = as.character(scenario_name), tuner = as.character(tuner), rep = reps,
           res)
   }, simplify = FALSE)
-  results <- rbindlist(results, use.names=TRUE)
+  cli_inform("Merging results")
+  results <- data.table::rbindlist(results, use.names=TRUE)
 
   old <- NULL
   if (!is.null(file) && fs::file_exists(file))
     old <- readRDS(file = file)
   
   if (!is.null(old)) {
+    cli_inform("Merging new results and old results from {.filename {file}}")
     results <- rbind(old[!results, on = c("scenario", "tuner", "rep")], results)
   }
   if (!is.null(file)) {
