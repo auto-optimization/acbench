@@ -38,5 +38,9 @@ install/
 data/
 algorithms/runsolver/runsolver
 algorithms/lkh-209/src-lkh-original/
+algorithms/lkh-209/LKH
+algorithms/lkh-209/README.txt
+algorithms/lkh-209/Makefile
+algorithms/lkh-209/src
 algorithms/highs-v153/HiGHS-1.5.3/
 algorithms/highs-v153/bin/
