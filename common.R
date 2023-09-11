@@ -238,7 +238,7 @@ get_train_summary <- function(p)
 {
   res <- read_completed_logfile(p)
   res <- irace::irace_summarise(res)
-  cat(sep="", "Summarised '", p, "'\n")
+  # cat(sep="", "Summarised '", p, "'\n")
   as.data.table(res[c("n_iterations", "n_instances", "n_experiments", "time_targetrunner",
                       "time_cpu_total", "time_wallclock")])
 }
@@ -261,7 +261,6 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
     cbind(scenario = as.character(scenario_name), tuner = as.character(tuner), rep = reps,
           res)
   }, simplify = FALSE)
-  cli_inform("Merging results")
   results <- data.table::rbindlist(results, use.names=TRUE)
 
   old <- NULL
@@ -269,7 +268,7 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
     old <- readRDS(file = file)
   
   if (!is.null(old)) {
-    cli_inform("Merging new results and old results from {.filename {file}}")
+    if (verbose) cli_inform("Merging new results and old results from {.filename {file}}")
     results <- rbind(old[!results, on = c("scenario", "tuner", "rep")], results)
   }
   if (!is.null(file)) {
