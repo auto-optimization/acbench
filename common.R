@@ -22,6 +22,9 @@ setDTthreads(threads = 1)
 #Sys.setenv(DEBUGME = "batchtools")
 #options(future.debug = TRUE)
 
+# Same as !(x %in% table). Package data.table has %notin%.
+"%notin%" <- function(x, table) match(x, table, nomatch = 0L) == 0L
+
 source("setups.R")
 
 install_irace <- function(install_dir, version, reinstall = FALSE)
@@ -195,6 +198,27 @@ get_irace_test_results <- function(res)
     instance = instances)
 }
 
+prune_test_results <- function(file = "test_results.rds", scenarios = NULL, tuners = NULL)
+{
+   res <- readRDS(file = file)
+   if (!is.null(tuners)) {
+      ok <- FALSE
+      for (s in names(res)) {
+         x <- res[[s]]
+ 	 notfound <- tuners %notin% unique(x$tuner)
+	 if (any(notfound)) {
+	    cli_warn("tuner {tuners[notfound]} not found in scenario {s}")
+	} else {
+	  ok <- TRUE
+	  }
+       }	  
+       if (ok)
+         res <- lapply(res, function(x) x[tuner %notin% tuners])
+   }
+   saveRDS(res, file = file)
+   cli_inform("Results saved to {.file {file}}")
+}
+
 collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds", verbose = TRUE)
 {
   res <- list()
@@ -204,7 +228,7 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
   for (scenario_name in scenarios) {
     p <- file.path(exec_dir, paste0("test-", scenario_name))
     if (!fs::file_exists(file.path(p, "irace.Rdata"))) {
-      	 cli_warn("File {.filename {file.path(p, 'irace.Rdata')}} not found ! Skipping ...")
+      	 cli_warn("File {.file {file.path(p, 'irace.Rdata')}} not found ! Skipping ...")
          next
     }
     log <- read_completed_logfile(p, has_testing = TRUE)
@@ -229,7 +253,7 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
   }
   if (!is.null(file)) {
     saveRDS(res, file = file)
-    cli_inform("Results saved to {.filename {file}}")
+    cli_inform("Results saved to {.file {file}}")
   }   
   invisible(res)
 }
@@ -268,12 +292,12 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
     old <- readRDS(file = file)
   
   if (!is.null(old)) {
-    if (verbose) cli_inform("Merging new results and old results from {.filename {file}}")
+    if (verbose) cli_inform("Merging new results and old results from {.file {file}}")
     results <- rbind(old[!results, on = c("scenario", "tuner", "rep")], results)
   }
   if (!is.null(file)) {
     saveRDS(results, file = file)
-    cli_inform("Results saved to {.filename {file}}")
+    cli_inform("Results saved to {.file {file}}")
   }
   invisible(results)
 }
@@ -308,7 +332,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 
   if (!is.null(file)) {
     saveRDS(res, file = file)
-    cli_inform("Results saved to {.filename {file}}")
+    cli_inform("Results saved to {.file {file}}")
   }
   invisible(res)
 }
@@ -431,7 +455,7 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
      exec_dir <- self$exec_dir
      install_dir <- self$install_dir
      if (!fs::file_exists(exec_dir))
-       cli_abort("exec_dir {.filename {exec_dir}} not found")
+       cli_abort("exec_dir {.file {exec_dir}} not found")
      exe <- get_tuner_executable(install_dir, "irace", "git")
      for (scenario_name in scenarios) {
        jobname <- paste0("test-", scenario_name)
