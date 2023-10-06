@@ -17,10 +17,10 @@ require_or_install(cli)
 require_or_install(withr)
 require_or_install(data.table)
 setDTthreads(threads = 1)
-# Debugging:
-#require_or_install(debugme)
-#Sys.setenv(DEBUGME = "batchtools")
-#options(future.debug = TRUE)
+## Debugging:
+# require_or_install(debugme)
+# Sys.setenv(DEBUGME = "batchtools")
+# options(future.debug = TRUE)
 
 # Same as !(x %in% table). Package data.table has %notin%.
 "%notin%" <- function(x, table) match(x, table, nomatch = 0L) == 0L
@@ -56,7 +56,7 @@ get_installed_irace <- function(install_dir, version)
 
 get_tuner_executable <- function(install_dir, tool, version)
   switch(tool,
-         "irace" = get_installed_irace(install_dir, version))
+    "irace" = get_installed_irace(install_dir, version))
 
 file_safe_delete <- function(path)
 {
@@ -82,7 +82,7 @@ sge_run <- function(ncpus) {
     launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
     brew::brew("launch_sge.tmpl", output = launch_file)
     fs::file_chmod(launch_file, "u+x")
-    #cat("sytem2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
+    # cat("sytem2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
     file_safe_delete(outfile)
     file_safe_delete(errfile)
     system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
@@ -93,8 +93,8 @@ sge_run <- function(ncpus) {
 local_run <- function(exe, args, exec_dir, jobname = NULL)
 {
   system2(exe, args = args,
-          stdout = file.path(exec_dir, "stdout.txt"),
-          stderr = file.path(exec_dir, "stderr.txt"))
+    stdout = file.path(exec_dir, "stdout.txt"),
+    stderr = file.path(exec_dir, "stderr.txt"))
 }
 
 find_scenario <- function(scenario_name)
@@ -138,10 +138,10 @@ download_uncompress <- function(url, exdir, flat = FALSE)
 }
 
 make_jobname <- function(scenario_name, tuner, tuner_version, rep)
- sprintf("%s_%s-%s-%02d", tuner, tuner_version, scenario_name, rep)
+  sprintf("%s_%s-%s-%02d", tuner, tuner_version, scenario_name, rep)
 
 make_execdir_name <- function(exec_dir, scenario_name, tuner, tuner_version, rep)
- file.path(exec_dir, scenario_name, sprintf("%s_%s-%02d", tuner, tuner_version, rep))
+  file.path(exec_dir, scenario_name, sprintf("%s_%s-%02d", tuner, tuner_version, rep))
 
 read_configurations <- function(scenario_name, file = "best_confs.rds", metadata = TRUE)
 {
@@ -185,7 +185,7 @@ get_irace_test_results <- function(res)
     cli_abort("log data does not contain testing data !")
   }
   instances <- sub("^/", "", perl = TRUE,
-                   sub(res$scenario$testInstancesDir, "", res$scenario$testInstances, fixed=TRUE))
+    sub(res$scenario$testInstancesDir, "", res$scenario$testInstances, fixed=TRUE))
   experiments <- res$testing$experiments
   cbind(as.data.table(
     # Cartesian product of matrix row and column names
@@ -200,23 +200,23 @@ get_irace_test_results <- function(res)
 
 prune_test_results <- function(file = "test_results.rds", scenarios = NULL, tuners = NULL)
 {
-   res <- readRDS(file = file)
-   if (!is.null(tuners)) {
-      ok <- FALSE
-      for (s in names(res)) {
-         x <- res[[s]]
- 	 notfound <- tuners %notin% unique(x$tuner)
-	 if (any(notfound)) {
-	    cli_warn("tuner {tuners[notfound]} not found in scenario {s}")
-	} else {
-	  ok <- TRUE
-	  }
-       }	  
-       if (ok)
-         res <- lapply(res, function(x) x[tuner %notin% tuners])
-   }
-   saveRDS(res, file = file)
-   cli_inform("Results saved to {.file {file}}")
+  res <- readRDS(file = file)
+  if (!is.null(tuners)) {
+    ok <- FALSE
+    for (s in names(res)) {
+      x <- res[[s]]
+      notfound <- tuners %notin% unique(x$tuner)
+      if (any(notfound)) {
+        cli_warn("tuner {tuners[notfound]} not found in scenario {s}")
+      } else {
+        ok <- TRUE
+      }
+    }	  
+    if (ok)
+      res <- lapply(res, function(x) x[tuner %notin% tuners])
+  }
+  saveRDS(res, file = file)
+  cli_inform("Results saved to {.file {file}}")
 }
 
 collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds", verbose = TRUE)
@@ -228,8 +228,8 @@ collect_test_results <- function(exec_dir, scenarios, file = "test_results.rds",
   for (scenario_name in scenarios) {
     p <- file.path(exec_dir, paste0("test-", scenario_name))
     if (!fs::file_exists(file.path(p, "irace.Rdata"))) {
-      	 cli_warn("File {.file {file.path(p, 'irace.Rdata')}} not found ! Skipping ...")
-         next
+      cli_warn("File {.file {file.path(p, 'irace.Rdata')}} not found ! Skipping ...")
+      next
     }
     log <- read_completed_logfile(p, has_testing = TRUE)
     results <- get_irace_test_results(log)
@@ -264,7 +264,7 @@ get_train_summary <- function(p)
   res <- irace::irace_summarise(res)
   # cat(sep="", "Summarised '", p, "'\n")
   as.data.table(res[c("n_iterations", "n_instances", "n_experiments", "time_targetrunner",
-                      "time_cpu_total", "time_wallclock")])
+    "time_cpu_total", "time_wallclock")])
 }
 
 collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds", verbose = FALSE)
@@ -277,13 +277,13 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
     if (verbose) {
       for (x in unique(tuner)) {
         cat(sprintf("%s: %s: %s\n", scenario_name, x,
-                    paste0(collapse=", ", reps[x == tuner])))
+          paste0(collapse=", ", reps[x == tuner])))
       }
     }
     summaries <- lapply(paths, get_train_summary)
     res <- data.table::rbindlist(summaries)
     cbind(scenario = as.character(scenario_name), tuner = as.character(tuner), rep = reps,
-          res)
+      res)
   }, simplify = FALSE)
   results <- data.table::rbindlist(results, use.names=TRUE)
 
@@ -316,16 +316,16 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
     if (verbose) {
       for (x in unique(tuner)) {
         cat(sprintf("%s: %s: %s\n", scenario_name, x,
-                    paste0(collapse=", ", reps[x == tuner])))
+          paste0(collapse=", ", reps[x == tuner])))
       }
     }
     results <- lapply(paths, get_best_configuration)
     names(results) <- NULL
     results <- data.table(.scenario = as.character(scenario_name), .tuner = as.character(tuner),
-                       .rep = reps, rbindlist(results, use.names=TRUE))
+      .rep = reps, rbindlist(results, use.names=TRUE))
     old <- res[[scenario_name]]
     if (!is.null(old)) {
-          results <- rbind(old[!results, on = c(".scenario", ".tuner", ".rep")], results)
+      results <- rbind(old[!results, on = c(".scenario", ".tuner", ".rep")], results)
     }
     res[[scenario_name]] <- results
   }
@@ -343,7 +343,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 ##     #require_or_install(future.batchtools)
 ##     ncpus <- 12
 ##     require_or_install(brew)
-    
+
 ## #    future::plan(batchtools_sge, template = "./batchtools.sge.tmpl",
 ## #                 resources = list(cpu=cpu, ncpus=ncpus),
 ## # https://github.com/HenrikBengtsson/future.batchtools/issues/68
@@ -357,7 +357,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 ## # reg <- batchtools::makeRegistry(file.dir=d)
 ## # reg$cluster.functions <- batchtools::makeClusterFunctionsSGE(template = "./batchtools.sge.tmpl")
 ## # setDefaultRegistry(reg)
-    
+
 ##   } else {
 ##     require_or_install(future.apply)
 ##     Sys.setenv(PROCESSX_NOTIFY_OLD_SIGCHLD="true") # https://github.com/r-lib/processx/issues/236
@@ -367,113 +367,6 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 ##   }
 ## }
 
-ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable = TRUE,
- public = list(
-   exec_dir = NULL,
-   install_dir = NULL,
-   do_run = NULL,
-   ncpus = 1L,
-   saved_setup = NULL,
-   initialize = function(exec_dir, install_dir, ncpus = 1, cluster = FALSE) {
-     self$exec_dir <- exec_dir
-     self$install_dir <- install_dir
-     self$ncpus <- ncpus
-     if (cluster) {
-       require_or_install(brew)
-       self$do_run <- sge_run(ncpus)
-       cli_inform("SGE plan setup completed with {ncpus} cpus")
-     } else {
-       require_or_install(future.apply)
-       Sys.setenv(PROCESSX_NOTIFY_OLD_SIGCHLD="true") # https://github.com/r-lib/processx/issues/236
-       future::plan(multicore, workers = ncpus)
-       cli_inform("multicore plan setup completed with {ncpus} cpus")
-       self$do_run <- local_run
-     }
-   },
-   save_setup = function(scenarios, tuners, tuner_versions, reps) {
-     self$saved_setup <- list(scenarios = scenarios,
-                             tuners = tuners,
-                             tuner_versions = tuner_versions,
-                             reps = reps)
-   },
-   run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
-     self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
-                 exec_dir = exec_dir, jobname = jobname)
-   },
-   
-   run_irace_testing = function(exe, scenario_file, exec_dir, confs_file, jobname) {
-     self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42, test = confs_file, ncpus = self$ncpus),
-                 exec_dir = exec_dir, jobname = jobname)
-   },
-
-   run_saved_setup = function() {
-     if (is.null(self$saved_setup))
-       cli_abort("No setup saved !")
-     self$run_scenario(scenarios = self$saved_setup$scenarios,
-                       tuners = self$saved_setup$tuners,
-                       tuner_versions = self$saved_setup$tuner_versions,
-                       reps = self$saved_setup$reps)
-   },
-
-   run_scenario = function(scenarios, tuners, tuner_versions, reps) {
-     if (length(reps) == 1)
-       reps <- seq_len(reps)
-     
-     exec_dir <- self$exec_dir
-     install_dir <- self$install_dir
-     for (scenario_name in scenarios) {
-       scenario <- setup_scenario(scenario_name, install_dir)
-       for (tuner in tuners) {
-         for (tuner_version in tuner_versions) {
-           exec_dirs <- sapply(reps, function(r) {
-             d <- make_execdir_name(exec_dir, scenario_name, tuner, tuner_version, r)
-             if (fs::file_exists(d)) {
-               fs::dir_delete(d)
-             }
-             fs::dir_create(d)
-             d
-           })
-           exe <- get_tuner_executable(install_dir, tuner, tuner_version)
-           cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
-           mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
-                  jobname = make_jobname(scenario_name, tuner, tuner_version, reps))
-           #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
-           #        future.label = paste0(tuner, "_", tuner_version, "-", scenario_name, "-%d"),
-           #	  future.conditions = NULL)
-           # ids <- batchtools::batchMap(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps)
-           # batchtools::setJobNames(ids, names = paste0(tuner, "_", tuner_version, "-", scenario_name, "-", reps))
-           #         ncpus <- 12
-           #     	cpu <- "haswell"
-           # batchtools::submitJobs(resources = list(cpu=cpu, ncpus=ncpus))
-           # batchtools::waitForJobs()
-         }
-       }
-     }
-   },
-   
-   run_test = function(scenarios) {
-     exec_dir <- self$exec_dir
-     install_dir <- self$install_dir
-     if (!fs::file_exists(exec_dir))
-       cli_abort("exec_dir {.file {exec_dir}} not found")
-     exe <- get_tuner_executable(install_dir, "irace", "git")
-     for (scenario_name in scenarios) {
-       jobname <- paste0("test-", scenario_name)
-       test_exec_dir <- file.path(exec_dir, jobname)
-       if (!fs::file_exists(test_exec_dir))
-         fs::dir_create(test_exec_dir)
-       confs <- read_configurations(scenario_name, metadata = FALSE)
-       confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
-       write.table(confs, file = confs_file, row.names = FALSE)  
-       
-       scenario <- find_scenario(scenario_name)
-       self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
-     }
-   }
-   
- ))
-
-
 read_setup_file <- function(file)
 {
   source(file)
@@ -481,7 +374,7 @@ read_setup_file <- function(file)
   tuners <- scan(text=tuners, what=character(), comment.char="#", quiet = TRUE)
   tuner_versions <- scan(text=tuner_versions, what=character(), comment.char="#", quiet = TRUE)
   acbench <- ACBench$new(exec_dir = exec_dir, install_dir = install_dir,
-                         cluster = cluster, ncpus = ncpus)
+    cluster = cluster, ncpus = ncpus)
   
   acbench$save_setup(scenarios, tuners, tuner_versions, reps)
   acbench
@@ -496,8 +389,8 @@ report <- function(path = "./", filename = "report",
   # render() already checks this but the error is not clear enough.
   if (! rmarkdown::pandoc_available("1.12.3", error = FALSE))
     cli_abort("pandoc version 1.12.3 or higher is required and was not found. ",
-              "You can install the RStudio IDE, which has bundled a version of Pandoc. ",
-              "Otherwise, follow the instructions at https://pandoc.org/installing.html .")
+      "You can install the RStudio IDE, which has bundled a version of Pandoc. ",
+      "Otherwise, follow the instructions at https://pandoc.org/installing.html .")
 
   path <- fs::path_abs(fs::path_expand(path))
   if (!fs::file_exists(path))
@@ -506,7 +399,116 @@ report <- function(path = "./", filename = "report",
   filename <- fs::path_abs(fs::path_expand(fs::path_ext_set(filename, "html")))
   cli_alert_info("Creating file '{.file {filename}}'.\n")
   rmarkdown::render(input=file.path("templates", "report_html.Rmd"),
-                    output_file=filename, clean = TRUE)
+    output_file=filename, clean = TRUE)
   if (interactive) utils::browseURL(filename)
   filename
 }
+
+ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable = TRUE,
+  public = list(
+    exec_dir = NULL,
+    install_dir = NULL,
+    do_run = NULL,
+    ncpus = 1L,
+    saved_setup = NULL,
+    initialize = function(exec_dir, install_dir, ncpus = 1, cluster = FALSE) {
+      self$exec_dir <- exec_dir
+      self$install_dir <- install_dir
+      self$ncpus <- ncpus
+      if (cluster) {
+        require_or_install(brew)
+        self$do_run <- sge_run(ncpus)
+        cli_inform("SGE plan setup completed with {ncpus} cpus")
+      } else {
+        require_or_install(future.apply)
+        Sys.setenv(PROCESSX_NOTIFY_OLD_SIGCHLD="true") # https://github.com/r-lib/processx/issues/236
+        future::plan(multicore, workers = ncpus)
+        cli_inform("multicore plan setup completed with {ncpus} cpus")
+        self$do_run <- local_run
+      }
+    },
+    save_setup = function(scenarios, tuners, tuner_versions, reps) {
+      self$saved_setup <- list(
+        scenarios = scenarios,
+        tuners = tuners,
+        tuner_versions = tuner_versions,
+        reps = reps)
+    },
+    run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
+      self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
+        exec_dir = exec_dir, jobname = jobname)
+    },
+    
+    run_irace_testing = function(exe, scenario_file, exec_dir, confs_file, jobname) {
+      self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42, test = confs_file, ncpus = self$ncpus),
+        exec_dir = exec_dir, jobname = jobname)
+    },
+
+    run_saved_setup = function() {
+      if (is.null(self$saved_setup))
+        cli_abort("No setup saved !")
+      self$run_scenario(scenarios = self$saved_setup$scenarios,
+        tuners = self$saved_setup$tuners,
+        tuner_versions = self$saved_setup$tuner_versions,
+        reps = self$saved_setup$reps)
+    },
+
+    run_scenario = function(scenarios, tuners, tuner_versions, reps) {
+      if (length(reps) == 1)
+        reps <- seq_len(reps)
+      
+      exec_dir <- self$exec_dir
+      install_dir <- self$install_dir
+      for (scenario_name in scenarios) {
+        scenario <- setup_scenario(scenario_name, install_dir)
+        for (tuner in tuners) {
+          for (tuner_version in tuner_versions) {
+            exec_dirs <- sapply(reps, function(r) {
+              d <- make_execdir_name(exec_dir, scenario_name, tuner, tuner_version, r)
+              if (fs::file_exists(d)) {
+                fs::dir_delete(d)
+              }
+              fs::dir_create(d)
+              d
+            })
+            exe <- get_tuner_executable(install_dir, tuner, tuner_version)
+            cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
+            mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
+              jobname = make_jobname(scenario_name, tuner, tuner_version, reps))
+            #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
+            #        future.label = paste0(tuner, "_", tuner_version, "-", scenario_name, "-%d"),
+            #	  future.conditions = NULL)
+            # ids <- batchtools::batchMap(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps)
+            # batchtools::setJobNames(ids, names = paste0(tuner, "_", tuner_version, "-", scenario_name, "-", reps))
+            #         ncpus <- 12
+            #     	cpu <- "haswell"
+            # batchtools::submitJobs(resources = list(cpu=cpu, ncpus=ncpus))
+            # batchtools::waitForJobs()
+          }
+        }
+      }
+    },
+    
+    run_test = function(scenarios) {
+      exec_dir <- self$exec_dir
+      install_dir <- self$install_dir
+      if (!fs::file_exists(exec_dir))
+        cli_abort("exec_dir {.file {exec_dir}} not found")
+      exe <- get_tuner_executable(install_dir, "irace", "git")
+      for (scenario_name in scenarios) {
+        jobname <- paste0("test-", scenario_name)
+        test_exec_dir <- file.path(exec_dir, jobname)
+        if (!fs::file_exists(test_exec_dir))
+          fs::dir_create(test_exec_dir)
+        confs <- read_configurations(scenario_name, metadata = FALSE)
+        confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
+        write.table(confs, file = confs_file, row.names = FALSE)  
+        
+        scenario <- find_scenario(scenario_name)
+        self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
+      }
+    }
+    
+  ))
+
+
