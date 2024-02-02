@@ -495,6 +495,9 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
       if (!fs::file_exists(exec_dir))
         cli_abort("exec_dir {.file {exec_dir}} not found")
       exe <- get_tuner_executable(install_dir, "irace", "git")
+      if (missing(scenarios))
+         scenarios <- self$saved_setup$scenarios # FIXME: Error handling.
+
       for (scenario_name in scenarios) {
         jobname <- paste0("test-", scenario_name)
         test_exec_dir <- file.path(exec_dir, jobname)
