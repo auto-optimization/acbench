@@ -1,4 +1,6 @@
  - [X] Create Rmd report with all analysis.
  - [ ] Report tested configurations per scenario
  - [ ] Show configurations in parallel coords plot (like iraceplot)
- 
+ - [ ] scip scenario
+   - [ ] update parameters.txt
+   
