@@ -8,11 +8,10 @@ acoqap-qap-rs-00-default
 "
 exec_dir = "./execdir"
 install_dir = "./install/"
-tuners = "irace"
-tuner_versions = "
-               git-datatable-clean
-               git
-               3.5
+tuners = "
+irace:git-datatable-clean"
+irace:git
+irace:3.5
 "
 reps = 10
 cluster = FALSE

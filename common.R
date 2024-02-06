@@ -372,11 +372,9 @@ read_setup_file <- function(file)
   source(file)
   scenarios <- scan(text=scenarios, what=character(), comment.char="#", quiet = TRUE)
   tuners <- scan(text=tuners, what=character(), comment.char="#", quiet = TRUE)
-  tuner_versions <- scan(text=tuner_versions, what=character(), comment.char="#", quiet = TRUE)
   acbench <- ACBench$new(exec_dir = exec_dir, install_dir = install_dir,
     cluster = cluster, ncpus = ncpus)
-  
-  acbench$save_setup(scenarios, tuners, tuner_versions, reps)
+  acbench$save_setup(scenarios, tuners, reps)
   acbench
 }
 
@@ -427,11 +425,10 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
         self$do_run <- local_run
       }
     },
-    save_setup = function(scenarios, tuners, tuner_versions, reps) {
+    save_setup = function(scenarios, tuners, reps) {
       self$saved_setup <- list(
         scenarios = scenarios,
         tuners = tuners,
-        tuner_versions = tuner_versions,
         reps = reps)
     },
     run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
@@ -449,12 +446,11 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
         cli_abort("No setup saved !")
       self$run_scenario(scenarios = self$saved_setup$scenarios,
         tuners = self$saved_setup$tuners,
-        tuner_versions = self$saved_setup$tuner_versions,
         reps = self$saved_setup$reps)
     },
 
-    run_scenario = function(scenarios, tuners, tuner_versions, reps) {
-      if (length(reps) == 1)
+    run_scenario = function(scenarios, tuners, reps) {
+      if (length(reps) == 1L)
         reps <- seq_len(reps)
       
       exec_dir <- self$exec_dir
@@ -462,19 +458,21 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
       for (scenario_name in scenarios) {
         scenario <- setup_scenario(scenario_name, install_dir)
         for (tuner in tuners) {
-          for (tuner_version in tuner_versions) {
-            exec_dirs <- sapply(reps, function(r) {
-              d <- make_execdir_name(exec_dir, scenario_name, tuner, tuner_version, r)
-              if (fs::file_exists(d)) {
-                fs::dir_delete(d)
-              }
-              fs::dir_create(d)
-              d
-            })
-            exe <- get_tuner_executable(install_dir, tuner, tuner_version)
-            cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
-            mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
-              jobname = make_jobname(scenario_name, tuner, tuner_version, reps))
+          tuner <- strsplit(x, ":")[[1L]]
+          tuner_version <- tuner[2L]
+          tuner_name <- tuner[1L]
+          exec_dirs <- sapply(reps, function(r) {
+            d <- make_execdir_name(exec_dir, scenario_name, tuner_name, tuner_version, r)
+            if (fs::file_exists(d)) {
+              fs::dir_delete(d)
+            }
+            fs::dir_create(d, recurse=TRUE)
+            d
+          })
+          exe <- get_tuner_executable(install_dir, tuner_name, tuner_version)
+          cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
+          mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
+            jobname = make_jobname(scenario_name, tuner_main, tuner_version, reps))
             #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
             #        future.label = paste0(tuner, "_", tuner_version, "-", scenario_name, "-%d"),
             #	  future.conditions = NULL)
@@ -484,7 +482,6 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
             #     	cpu <- "haswell"
             # batchtools::submitJobs(resources = list(cpu=cpu, ncpus=ncpus))
             # batchtools::waitForJobs()
-          }
         }
       }
     },
@@ -511,7 +508,6 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
         self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
       }
     }
-    
   ))
 
 
