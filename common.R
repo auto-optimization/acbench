@@ -30,7 +30,8 @@ source("setups.R")
 install_irace <- function(install_dir, version, reinstall = FALSE)
 {
   lib <- file.path(install_dir, paste0("irace_", version))
-  if (reinstall || !fs::file_exists(file.path(lib, "irace", "bin"))) {
+  if (reinstall || !fs::file_exists(file.path(lib, "irace", "bin", "irace"))) {
+    tryCatch({
     fs::dir_create(lib)
     if (version == "git") {
       install_github("MLopez-Ibanez/irace", upgrade = "never", lib = lib)
@@ -41,6 +42,15 @@ install_irace <- function(install_dir, version, reinstall = FALSE)
     } else  { 
       install_version("irace", version = version, upgrade = "never", lib = lib)
     }
+    real_version <- packageVersion("irace", lib.loc = lib)
+    # We overwrite the irace launcher for versions that do not support relocation.
+    if (real_version < package_version("3.5.1")) {
+      fs::file_copy("./util/irace", file.path(lib, "irace", "bin", "irace"), overwrite =TRUE)
+    }
+    }, error = function(c) {
+       fs::dir_delete(lib)
+       stop(c)
+    })
   }
   lib
 }
@@ -82,7 +92,7 @@ sge_run <- function(ncpus) {
     launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
     brew::brew("launch_sge.tmpl", output = launch_file)
     fs::file_chmod(launch_file, "u+x")
-    # cat("sytem2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
+    # cat("system2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
     file_safe_delete(outfile)
     file_safe_delete(errfile)
     system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
@@ -92,9 +102,9 @@ sge_run <- function(ncpus) {
 
 local_run <- function(exe, args, exec_dir, jobname = NULL)
 {
-  system2(exe, args = args,
-    stdout = file.path(exec_dir, "stdout.txt"),
-    stderr = file.path(exec_dir, "stderr.txt"))
+    system2(exe, args = args,
+      stdout = file.path(exec_dir, "stdout.txt"),
+      stderr = file.path(exec_dir, "stderr.txt"))
 }
 
 find_scenario <- function(scenario_name)
@@ -431,6 +441,12 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
         tuners = tuners,
         reps = reps)
     },
+    collect_train_results = function(scenarios, file = "train_results.rds", verbose = FALSE) {
+      collect_train_results(self$exec_dir, scenarios = scenarios, file = file, verbose = verbose)
+    },
+    collect_test_results = function(scenarios, file = "test_results.rds", verbose = TRUE) {
+       collect_test_results(self$exec_dir, scenarios = scenarios, file = file, verbose = verbose)
+    },
     run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
       self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
         exec_dir = exec_dir, jobname = jobname)
@@ -458,7 +474,7 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
       for (scenario_name in scenarios) {
         scenario <- setup_scenario(scenario_name, install_dir)
         for (tuner in tuners) {
-          tuner <- strsplit(x, ":")[[1L]]
+          tuner <- strsplit(tuner, ":")[[1L]]
           tuner_version <- tuner[2L]
           tuner_name <- tuner[1L]
           exec_dirs <- sapply(reps, function(r) {
@@ -472,12 +488,12 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
           exe <- get_tuner_executable(install_dir, tuner_name, tuner_version)
           cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
           mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
-            jobname = make_jobname(scenario_name, tuner_main, tuner_version, reps))
+            jobname = make_jobname(scenario_name, tuner_name, tuner_version, reps))
             #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
-            #        future.label = paste0(tuner, "_", tuner_version, "-", scenario_name, "-%d"),
+            #        future.label = paste0(tuner_name, "_", tuner_version, "-", scenario_name, "-%d"),
             #	  future.conditions = NULL)
             # ids <- batchtools::batchMap(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps)
-            # batchtools::setJobNames(ids, names = paste0(tuner, "_", tuner_version, "-", scenario_name, "-", reps))
+            # batchtools::setJobNames(ids, names = paste0(tuner_name, "_", tuner_version, "-", scenario_name, "-", reps))
             #         ncpus <- 12
             #     	cpu <- "haswell"
             # batchtools::submitJobs(resources = list(cpu=cpu, ncpus=ncpus))
