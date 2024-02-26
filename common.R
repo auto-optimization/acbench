@@ -447,6 +447,9 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
     collect_test_results = function(scenarios, file = "test_results.rds", verbose = TRUE) {
        collect_test_results(self$exec_dir, scenarios = scenarios, file = file, verbose = verbose)
     },
+    collect_best_confs = function(scenarios, file = "best_confs.rds", verbose = TRUE) {
+       collect_best_confs(self$exec_dir, scenarios = scenarios, file = file, verbose = verbose)
+    },
     run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
       self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
         exec_dir = exec_dir, jobname = jobname)

@@ -1,7 +1,7 @@
 scenarios = "
 acotsp-tsp-rue-2000
 acoqap-qap-rs-00
-#acotsp-tsp-rue-2000-default
+acotsp-tsp-rue-2000-default
 acoqap-qap-rs-00-default
 lkh-209-tsp-rue-2000
 highs-153-mip-regions200
@@ -9,10 +9,10 @@ highs-153-mip-regions200
 exec_dir = "~/scratch/execdir"
 install_dir = "~/scratch/install/"
 tuners = "
-#irace:3.4
+irace:3.4
 irace:3.5
-#irace:git-20bc7e6bbe43fe9dd2443ac06afe8a600d30f634
-#irace:git-f1b13ee70519515248058f7525f042a08bfccd2f
+irace:git-d1e639a168736479c49f4241ea11a8142fddd3d9 # data-table
+irace:git-43648984bd3468ee59110126bf103c5b2c4fad2e
 "
 reps = 10
 cluster = TRUE

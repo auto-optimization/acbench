@@ -1,7 +1,7 @@
 source("common.R")
 # exec_dir <- "./execdir"
-exec_dir <- "~/scratch/execdir"
-scenarios_file <- "scenarios.txt"
-scenarios <- read_scenarios_file(scenarios_file)
-res <- collect_test_results(exec_dir, scenarios)
+setup_file <- "sge_setup.txt"
+acbench <- read_setup_file(setup_file)
+scenarios <- read_scenarios_file("scenarios.txt")
+res <- acbench$collect_test_results(scenarios)
 
