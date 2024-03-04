@@ -34,6 +34,7 @@ knitr::opts_chunk$set(
 library(ggplot2)
 library(data.table, quietly = TRUE)
 library(DT)
+library(stringi)
 if (!exists("interactive_plots")) interactive_plots <- base::interactive()
 # FIXME: Move show_table to the package so people can use it to create their
 # own reports.
@@ -89,6 +90,21 @@ show_table <- function(x, row.names = FALSE, search = FALSE, lengthMenu = NULL,
   tab
 }
 
+git_rev_parse_short <- function(versions) {
+  shas <- unique(versions)
+  shas <- sapply(strsplit(shas[grepl("_git-", shas, fixed=TRUE)],
+    "_git-", fixed=TRUE), function(x) x[2L])
+  if (length(shas) == 0L) return(versions)
+  maxl <- min(nchar(shas))
+  if (maxl <= 4L) return(versions)
+  for (l in seq(4L,maxl)) {
+    short_shas <- substr(shas, 1L, l)
+    if (anyDuplicated(short_shas) == 0L)
+      break
+  }
+  stringi::stri_replace_all_fixed(versions, shas, short_shas, vectorize_all=FALSE)
+}
+
 readRDS_safe <- function(filename) {
   if (!fs::file_exists(filename))
     cli_abort("'{.file {filename}} does not exist")
@@ -96,6 +112,7 @@ readRDS_safe <- function(filename) {
 }
 
 dt <- readRDS_safe(file.path(path, "train_results.rds"))
+dt$tuner <- git_rev_parse_short(dt$tuner)
 
 # TODO, exclude columns like rep.
 my_summary <- function(x) list(mean=mean(x), sd=sd(x))
@@ -105,7 +122,7 @@ train_summary <- train_summary[
   on = c("scenario", "tuner")]
 
 test_res <- readRDS_safe(file.path(path, "test_results.rds"))
-
+test_res <- lapply(test_res, function(x) set(x, j = "tuner", value = git_rev_parse_short(x[["tuner"]])))
 ```
 
 # Training results
@@ -116,15 +133,24 @@ show_table(train_summary, lengthMenu = c(20, 50, 100), search = TRUE,
   DT::formatStyle("scenario","white-space"="nowrap")
 ```
 
-## Boxplot
+## Boxplots
 
-```{r train-boxplot,fig.align="center", out.width="100%", echo=FALSE}
+```{r, results='asis',fig.align="center",out.width="100%" }
+setnames(dt, c("n_iterations", "n_instances",  "n_experiments", "time_targetrunner",
+  "time_cpu_total","time_wallclock"),
+  c("Num. iterations", "Num. instances",  "Num. experiments", "targetRunner time (s)",
+    "Total CPU time (s)","Total Wallclock time (s)"), skip_absent = TRUE)
 id_vars <- c("scenario", "tuner", "rep")
 num_cols <- setdiff(colnames(dt), id_vars)
 dt[, (num_cols):=lapply(.SD, as.numeric), .SDcols=num_cols]
-dt <- melt(dt, id.vars = id_vars)
-ggplot(dt, aes(x=value, y=scenario, fill=tuner)) +
-  geom_boxplot() + facet_wrap(~variable, scales="free_x")
+for (col in num_cols) {
+  cat('###',col,' \n')
+  p <- ggplot(dt, aes(x=.data[[col]], y=scenario, fill=tuner)) +
+    geom_boxplot() + 
+    theme(legend.position="bottom", legend.text=element_text(size=rel(0.8)))
+  print(p)
+  cat('\n\n')
+}
 ```
 
 # Testing results
