@@ -35,6 +35,3 @@ delta.rho      "--delta-rho "      o (0.001, 0.002, 0.005, 0.01) | var.rho == "d
 switch.rho     "--switch-rho "     i (1, 500)    | var.rho == "switch"
 start.rho      "--rho "            r (0.01, 1.0) | var.rho != "none"
 end.rho        "--end-rho "        r (0.01, 1.0) | var.rho != "none"
-
-[global]
-digits=4

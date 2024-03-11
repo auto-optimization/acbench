@@ -27,6 +27,27 @@ setDTthreads(threads = 1)
 
 source("setups.R")
 
+find_scenario <- function(scenario_name, install_dir, tuner, version)
+{
+  lib <- file.path(install_dir, paste0(tuner, "_", version))
+  real_version <- packageVersion(tuner, lib.loc = lib)
+  lowest_version <- "0.0.0"
+  for (d in fs::dir_ls("scenarios/", glob = paste0("*/", tuner, "_*"))) {
+    scenario_version <- strsplit(fs::path_file(d), "_")[[1L]][2L]
+    if (real_version <= package_version(scenario_version)
+      && package_version(scenario_version) > package_version(lower_version))  {
+      lowest_version <- scenario_version
+    }
+  }
+  scenario <- if (lowest_version == "0.0.0")
+                file.path("scenarios", paste0(scenario_name, ".txt")) else
+		file.path("scenarios", paste0(tuner, "_", lowest_version), paste0(scenario_name, ".txt"))
+  names(scenario) <- scenario_name
+  if (!fs::file_exists(scenario))
+    cli_abort("Unknown scenario {.var {scenario_name}}")
+  scenario
+}
+
 install_irace <- function(install_dir, version, reinstall = FALSE)
 {
   lib <- file.path(install_dir, paste0("irace_", version))
@@ -105,15 +126,6 @@ local_run <- function(exe, args, exec_dir, jobname = NULL)
     system2(exe, args = args,
       stdout = file.path(exec_dir, "stdout.txt"),
       stderr = file.path(exec_dir, "stderr.txt"))
-}
-
-find_scenario <- function(scenario_name)
-{
-  scenario <- file.path("scenarios", paste0(scenario_name, ".txt"))
-  names(scenario) <- scenario_name
-  if (!fs::file_exists(scenario))
-    cli_abort("Unknown scenario {.var {scenario_name}}")
-  scenario
 }
 
 invoke_make <- function(args)
@@ -475,7 +487,7 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
       exec_dir <- self$exec_dir
       install_dir <- self$install_dir
       for (scenario_name in scenarios) {
-        scenario <- setup_scenario(scenario_name, install_dir)
+        setup_scenario(scenario_name, install_dir)
         for (tuner in tuners) {
           tuner <- strsplit(tuner, ":")[[1L]]
           tuner_version <- tuner[2L]
@@ -489,6 +501,7 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
             d
           })
           exe <- get_tuner_executable(install_dir, tuner_name, tuner_version)
+	  scenario <- find_scenario(scenario_name, install_dir, tuner_name, tuner_version)
           cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
           mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
             jobname = make_jobname(scenario_name, tuner_name, tuner_version, reps))
@@ -523,7 +536,7 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
         confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
         write.table(confs, file = confs_file, row.names = FALSE)  
         
-        scenario <- find_scenario(scenario_name)
+        scenario <- find_scenario(scenario_name, "irace", "git")
         self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
       }
     }

@@ -6,7 +6,7 @@
 ## value on the command line).
 
 ## File that contains the description of the parameters.
-parameterFile = "../algorithms/acotspqap/parameters-acotsp.txt"
+parameterFile = "../algorithms/acotspqap/irace_3.5/parameters-acotsp.txt"
 
 ## Executable called for each configuration that executes the target algorithm
 ## to be tuned. See the templates and examples provided.
@@ -26,6 +26,10 @@ maxExperiments = 2500
 ## File that contains a table of initial configurations. If empty or NULL, all
 ## initial configurations are randomly generated.
 configurationsFile = "../algorithms/acotspqap/acotsp-default.txt"
+
+## Indicates the number of decimal places to be considered for the
+## real parameters.
+digits = 4
 
 ## END of scenario file
 ############################################################################

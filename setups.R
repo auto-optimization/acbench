@@ -90,7 +90,6 @@ setup_mip_regions200 <- function()
 # Main function
 setup_scenario <- function(scenario_name, install_dir)
 {
-  scenario <- find_scenario(scenario_name)
   if (scenario_name %in% c("acotsp-tsp-rue-2000","acotsp-tsp-rue-2000-default")) {
     setup_acotsp()
     setup_tsp_rue_2000()
@@ -107,5 +106,4 @@ setup_scenario <- function(scenario_name, install_dir)
   } else {
     cli_abort("No setup defined for scenario {scenario_name} !")
   }
-  scenario
 }

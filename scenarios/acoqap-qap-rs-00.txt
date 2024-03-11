@@ -23,10 +23,6 @@ testInstancesFile = "../instances/qap/instances-RS-00-test.txt"
 ## performed. It determines the (maximum) budget of experiments for the tuning.
 maxExperiments = 2500
 
-## Indicates the number of decimal places to be considered for the
-## real parameters.
-digits = 4
-
 ## END of scenario file
 ############################################################################
 

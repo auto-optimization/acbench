@@ -27,10 +27,6 @@ maxExperiments = 2500
 ## initial configurations are randomly generated.
 configurationsFile = "../algorithms/acotspqap/acoqap-default.txt"
 
-## Indicates the number of decimal places to be considered for the
-## real parameters.
-digits = 4
-
 ## END of scenario file
 ############################################################################
 

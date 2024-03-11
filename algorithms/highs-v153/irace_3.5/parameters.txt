@@ -42,5 +42,3 @@ mip_pscost_minreliable "mip_pscost_minreliable=" i (0, 100)
 # [type: double, advanced: false, range: [0, 1], default: 0.05]
 mip_heuristic_effort "mip_heuristic_effort=" r (0,1)
 
-[global]
-digits=4

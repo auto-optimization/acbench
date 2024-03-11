@@ -20,3 +20,6 @@ restart         "--restart "         c          (never, always, "branch-factor",
 restart_branch_factor "--restart-branch-factor " r (1.0, 2.0)           | restart == "branch-factor"
 restart_avg_distance  "--restart-avg-distance  "    r (0.01, 0.10)      | restart == "distance"
 restart_min_iterations "--restart-min-iterations "  i (1, 500)          | restart != "never"
+
+[global]
+digits=4

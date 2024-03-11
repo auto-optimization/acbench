@@ -6,7 +6,7 @@
 ## value on the command line).
 
 ## File that contains the description of the parameters.
-parameterFile = "../algorithms/highs-v153/parameters.txt"
+parameterFile = "../algorithms/highs-v153/irace_3.5/parameters.txt"
 
 ## Executable called for each configuration that executes the target algorithm
 ## to be tuned. See the templates and examples provided.
@@ -34,6 +34,10 @@ testInstancesFile = "../instances/mip/Regions200/testing.txt"
 ## one returned by `targetRunner` must use the same units (seconds, minutes,
 ## iterations, evaluations, ...).
 maxTime = 86400
+
+## Indicates the number of decimal places to be considered for the
+## real parameters.
+digits = 4
 
 ## Maximum execution bound for `targetRunner`. It must be specified when
 ## capping is enabled.

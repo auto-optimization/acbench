@@ -20,30 +20,3 @@ restart         "--restart "         c          (never, always, "branch-factor",
 restart_branch_factor "--restart-branch-factor " r (1.0, 2.0)           | restart == "branch-factor"
 restart_avg_distance  "--restart-avg-distance  "    r (0.01, 0.10)      | restart == "distance"
 restart_min_iterations "--restart-min-iterations "  i (1, 500)          | restart != "never"
-
-var.ants        "--var-ants "        c ("none", "delta", "switch")
-delta.ants      "--delta-ants "      o (0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5) | var.ants == "delta"
-switch.ants     "--switch-ants "     i (1, 500) | var.ants == "switch"
-start.ants      "--ants "            c (1)      | var.ants != "none"
-end.ants        "--end-ants "        i (1,500)  | var.ants != "none"
-
-var.beta        "--var-beta "        c ("none", "delta", "switch")
-delta.beta      "--delta-beta "      o (0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0) | var.beta == "delta"
-switch.beta     "--switch-beta "     i (1, 500) | var.beta == "switch"
-start.beta      "--beta "            i (0, 20)  | var.beta != "none"
-end.beta        "--end-beta "        i (0, 5)   | var.beta != "none"
-
-var.q0        "--var-q0 "            c ("none", "delta", "switch")
-delta.q0      "--delta-q0 "          o (0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005) | var.q0 == "delta"
-switch.q0     "--switch-q0 "         i (1, 500)   | var.q0 == "switch"
-start.q0      "--q0 "                r (0.0, 1.0) | var.q0 != "none"
-end.q0        "--end-q0 "            r (0.0, 1.0) | var.q0 != "none"
-
-var.rho        "--var-rho "          c ("none", "delta", "switch")
-delta.rho      "--delta-rho "        o (0.001, 0.002, 0.005, 0.01) | var.rho == "delta"
-switch.rho     "--switch-rho "       i (1, 500)    | var.rho == "switch"
-start.rho      "--rho "              r (0.01, 1.0) | var.rho != "none"
-end.rho        "--end-rho "          r (0.01, 1.0) | var.rho != "none"
-
-[global]
-digits=4
