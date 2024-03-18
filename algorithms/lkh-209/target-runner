@@ -63,12 +63,12 @@ if [ ! -s "${STDOUT}" ]; then
     error "${STDOUT}: No such file or directory"
 fi
 
-COST=$(tac "${STDOUT}" | grep -m 1 -E 'Cost = [^,]+, Time = ' | sed -n -e 's/^.*Cost = \([^,]\+\).\+$/\1/p')
+COST=$(tac "${STDOUT}" | grep -m 1 -o -E 'Cost = [^,]+, Time = ' | sed -n -e 's/^.*Cost = \([^,]\+\).\+$/\1/p')
 if [ -z "$COST" ]; then
     COST="Inf"
 fi
 # Print it!
 echo "$COST"
 # We are done with our duty. Clean files and exit with 0 (no error).
-rm -f "$PARFILE" "${STDOUT}" "${STDERR}"
+rm -f "$PARFILE" "${SDTOUT}" "${STDERR}"
 exit 0
