@@ -6,18 +6,18 @@
 ## value on the command line).
 
 ## File that contains the description of the parameters.
-parameterFile = "../algorithms/acotspqap/irace_3.5/parameters-acoqap.txt"
+parameterFile = "../../algorithms/acotspqap/irace_3.5/parameters-acoqap.txt"
 
 ## Executable called for each configuration that executes the target algorithm
 ## to be tuned. See the templates and examples provided.
-targetRunner = "../algorithms/acotspqap/target-runner-acoqap"
+targetRunner = "../../algorithms/acotspqap/target-runner-acoqap"
 
 ## Directory where tuning instances are located, either absolute path or
 ## relative to current directory.
-trainInstancesDir = "../data/qap/"
-trainInstancesFile = "../instances/qap/instances-RS-00-train.txt"
+trainInstancesDir = "../../data/qap/"
+trainInstancesFile = "../../instances/qap/instances-RS-00-train.txt"
 testInstancesDir = trainInstancesDir
-testInstancesFile = "../instances/qap/instances-RS-00-test.txt"
+testInstancesFile = "../../instances/qap/instances-RS-00-test.txt"
 
 ## The maximum number of runs (invocations of targetRunner) that will
 ## performed. It determines the (maximum) budget of experiments for the tuning.
@@ -25,7 +25,7 @@ maxExperiments = 2500
 
 ## File that contains a table of initial configurations. If empty or NULL, all
 ## initial configurations are randomly generated.
-configurationsFile = "../algorithms/acotspqap/acoqap-default.txt"
+configurationsFile = "../../algorithms/acotspqap/acoqap-default.txt"
 
 ## Indicates the number of decimal places to be considered for the
 ## real parameters.

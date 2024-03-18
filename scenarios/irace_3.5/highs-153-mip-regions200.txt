@@ -6,20 +6,20 @@
 ## value on the command line).
 
 ## File that contains the description of the parameters.
-parameterFile = "../algorithms/highs-v153/irace_3.5/parameters.txt"
+parameterFile = "../../algorithms/highs-v153/irace_3.5/parameters.txt"
 
 ## Executable called for each configuration that executes the target algorithm
 ## to be tuned. See the templates and examples provided.
-targetRunner = "../algorithms/highs-v153/target-runner-cap"
+targetRunner = "../../algorithms/highs-v153/target-runner-cap"
 
 ## Directory where tuning instances are located, either absolute path or
 ## relative to current directory.
-trainInstancesDir = "../data/mip/Regions200/"
+trainInstancesDir = "../../data/mip/Regions200/"
 
 ## File that contains a list of training instances and optionally additional
 ## parameters for them. If `trainInstancesDir` is provided, `irace` will
 ## search for the files in this folder.
-trainInstancesFile = "../instances/mip/Regions200/training.txt"
+trainInstancesFile = "../../instances/mip/Regions200/training.txt"
 
 ## Directory where testing instances are located, either absolute or relative
 ## to current directory.
@@ -27,7 +27,7 @@ testInstancesDir = trainInstancesDir
 
 ## File containing a list of test instances and optionally additional
 ## parameters for them.
-testInstancesFile = "../instances/mip/Regions200/testing.txt"
+testInstancesFile = "../../instances/mip/Regions200/testing.txt"
 
 ## Maximum total execution time for the executions of `targetRunner`.
 ## `targetRunner` must return two values: cost and time. This value and the
