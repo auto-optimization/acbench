@@ -110,12 +110,12 @@ sge_run <- function(ncpus) {
   function(exe, args, exec_dir, jobname, ncpus = .ncpus) {
     outfile <- fs::path_abs(file.path(exec_dir, "stdout.txt"))
     errfile <- fs::path_abs(file.path(exec_dir, "stderr.txt"))
+    file_safe_delete(outfile)
+    file_safe_delete(errfile)
     launch_file <- tempfile(pattern = "launch_sge", tmpdir = tempdir(), fileext = ".sh")
     brew::brew("launch_sge.tmpl", output = launch_file)
     fs::file_chmod(launch_file, "u+x")
     # cat("system2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
-    file_safe_delete(outfile)
-    file_safe_delete(errfile)
     system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
     fs::file_delete(launch_file)
   }
