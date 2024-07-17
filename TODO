@@ -1,3 +1,4 @@
+ - [ ] Function that reports progress: What experiments have finished and report errors, what experiments are running and what experiments are in the queue.
  - [X] Create Rmd report with all analysis.
  - [ ] Report tested configurations per scenario
  - [ ] Show configurations in parallel coords plot (like iraceplot)

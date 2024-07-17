@@ -63,6 +63,8 @@ fi
 STATUS=$(sed -n -e 's/^[ \t]\+Status[ \t]\+\(Optimal\|Time limit reached\)[ \t]*$/\1/p' $STDOUT)
 if [ "$STATUS" = "Optimal" ]; then
     TIME=$(sed -n -e 's/^[ \t]\+Timing[ \t]\+\([^ ]\+\).\+$/\1/p' $STDOUT)
+    if (( TIME > BOUND )); then
+	TIME=$BOUND
     echo $TIME $TIME
 elif [ "$STATUS" = "Time limit reached" ]; then
     echo $BOUND $BOUND

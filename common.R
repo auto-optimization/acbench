@@ -14,7 +14,9 @@ require_or_install(remotes)
 require_or_install(R6)
 require_or_install(fs)
 require_or_install(cli)
+require_or_install(processx)
 require_or_install(withr)
+require_or_install(stringr)
 require_or_install(data.table)
 setDTthreads(threads = 1)
 ## Debugging:
@@ -27,6 +29,39 @@ setDTthreads(threads = 1)
 
 source("setups.R")
 
+check_output_files <- function(exec_dir, scenarios, tuners, reps)
+{
+  check_file_nonzero <- function(f) {
+           if (!fs::file_exists(f))
+	     cli_warn("{.file {f}} does not exist!")
+            else if (fs::file_size(f) == 0)
+	     cli_warn("{.file {f}} has zero size!")
+ }
+  check_file_zero <- function(f) {
+           if (!fs::file_exists(f))
+	     cli_warn("{.file {f}} does not exist!")
+            else if (fs::file_size(f) > 0)
+	     cli_warn("{.file {f}} has non-zero size!")
+ }
+
+      if (length(reps) == 1L)
+        reps <- seq_len(reps)
+
+  for (scenario_name in scenarios) {
+          for (tuner in tuners) {
+          tuner <- strsplit(tuner, ":")[[1L]]
+          tuner_version <- tuner[2L]
+          tuner_name <- tuner[1L]
+          for (r in reps) {
+            d <- make_execdir_name(exec_dir, scenario_name, tuner_name, tuner_version, r)
+	    check_file_zero(file.path(d, "stderr.txt"))
+	    check_file_nonzero(file.path(d, "stdout.txt"))
+	    check_file_nonzero(file.path(d, "irace.Rdata"))
+	    				 }
+					 }
+					 }
+}
+ 
 find_scenario <- function(scenario_name, install_dir, tuner, version)
 {
   lib <- file.path(install_dir, paste0(tuner, "_", version))
@@ -89,14 +124,12 @@ get_tuner_executable <- function(install_dir, tool, version)
   switch(tool,
     "irace" = get_installed_irace(install_dir, version))
 
-file_safe_delete <- function(path)
-{
+file_safe_delete <- function(path) {
   if (fs::file_exists(path))
     fs::file_delete(path)
 }
 
-get_irace_cmdline <- function(scenario_file, exec_dir, seed, ncpus = NULL, test = NULL)
-{
+get_irace_cmdline <- function(scenario_file, exec_dir, seed, ncpus = NULL, test = NULL) {
   args <- c("-s", scenario_file, "--exec-dir", exec_dir, "--seed", seed, "--test-num-elites", "0")
   if (!is.null(ncpus))
     args <- c(args, "--parallel", ncpus)
@@ -116,13 +149,22 @@ sge_run <- function(ncpus) {
     brew::brew("launch_sge.tmpl", output = launch_file)
     fs::file_chmod(launch_file, "u+x")
     # cat("system2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
-    system2(launch_file, args = c(exe, args), stdout = "", stderr = "")
+    # FIXME: Parse 
+    output <- processx::run(launch_file, args = c(exe, args), echo_cmd=TRUE, echo=TRUE,
+                            error_on_status = TRUE, cleanup_tree=TRUE)
+    #print(output)
+    jobID <- stringr::str_extract(output$stdout, '^Your job ([0-9]+) \\([^)]+\\) has been submitted', group=1)
+    #print(jobID)
+    if (is.na(jobID)) {
+        cli_abort("Cannot parse jobID from:\n", output$stdout)
+    }
     fs::file_delete(launch_file)
+    paste0(jobID, " ", jobname)
   }
 }
 
-local_run <- function(exe, args, exec_dir, jobname = NULL)
-{
+
+local_run <- function(exe, args, exec_dir, jobname = NULL) {
     system2(exe, args = args,
       stdout = file.path(exec_dir, "stdout.txt"),
       stderr = file.path(exec_dir, "stderr.txt"))
@@ -175,9 +217,11 @@ read_configurations <- function(scenario_name, file = "best_confs.rds", metadata
   unique(x) # Remove duplicated rows.
 }
 
-read_scenarios_file <- function(file)
+read_scenarios_file <- function(file="", text) {
+		    if (missing(file) && !missing(text))
+return(scan(text=scenarios, what=character(), comment.char="#", quiet = TRUE))
   scan(file, what = character(), strip.white=TRUE, comment.char = "#", quiet = TRUE)
-
+}
 
 read_completed_logfile <- function(p, has_testing = FALSE)
 {
@@ -220,8 +264,7 @@ get_irace_test_results <- function(res)
     instance = instances)
 }
 
-prune_test_results <- function(file = "test_results.rds", scenarios = NULL, tuners = NULL)
-{
+prune_test_results <- function(file = "test_results.rds", scenarios = NULL, tuners = NULL) {
   res <- readRDS(file = file)
   if (!is.null(tuners)) {
     ok <- FALSE
@@ -288,6 +331,56 @@ get_train_summary <- function(p)
   as.data.table(res[c("n_iterations", "n_instances", "n_experiments", "time_targetrunner",
     "time_cpu_total", "time_wallclock")])
 }
+
+prune_train_results <- function(exec_dir, scenarios,  tuners, file = "train_results.rds", verbose = FALSE, invert=FALSE) {
+  sapply(scenarios, function(scenario_name) {
+    paths <- fs::dir_ls(file.path(exec_dir, scenario_name),
+    	                regexp=paste0(tuners, "-[0-9]+$", collapse="|"), 
+                        invert = invert, type="directory")
+    for (p in paths) {    
+       if (verbose) cli_inform("Deleting {.file {p}}")
+       fs::dir_delete(p)
+    }      
+ })
+}
+
+sge_list_jobs <- function() {
+   jobs <- read.table(text=system2("qstat", "| tr -s ' ' | cut -d ' ' -f1,5 -s", stdout=TRUE), header=TRUE)
+   jobs <- data.table(jobs)
+   done <- setdiff(job_ids, jobs$job.ID)
+   pending <- intersect(job_ids, jobs$job.ID)
+   jobs <- jobs[job.ID %in% pending, ]
+   running <- jobs[state == 'r'][["job.ID"]]
+   waiting <- jobs[state == 'qw'][["job.ID"]]
+   errored <- setdiff(jobs$job.ID, c(running, waiting))
+   list(done = done, running = running, waiting = waiting, errored = errored)
+}
+
+# FIXME: We have to keep track of jobIDs/PIDs to be able to check status.
+# check_status <- function(exec_dir, scenarios, tuners, reps) {
+#  if (length(reps) == 1L)	   
+#    reps <- seq_len(reps)	   
+#  for (scenario_name in scenarios) {
+#     for (tuner in tuners) {
+#     	tuner <- strsplit(tuner, ":")[[1L]]
+#  	tuner_version <- tuner[2L]
+#  	tuner_name <- tuner[1L]
+#         exec_dirs <- sapply(reps, function(r) {
+#             d <- make_execdir_name(exec_dir, scenario_name, tuner_name, tuner_version, r)
+#             if (!fs::file_exists(d)) {
+#                cli_warn("{.file {d}} not found !")
+# 	    } else {
+# 	       
+# 	    } 
+# 
+#               fs::dir_delete(d)
+#             }
+#             fs::dir_create(d, recurse=TRUE)
+#             d
+#           })
+# 
+# }
+# 
 
 collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds", verbose = FALSE)
 {
@@ -389,14 +482,21 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 ##   }
 ## }
 
-read_setup_file <- function(file)
+read_setup_file_helper <- function(file)
 {
   source(file)
-  scenarios <- scan(text=scenarios, what=character(), comment.char="#", quiet = TRUE)
+  scenarios <- read_scenarios_file(text=scenarios)
   tuners <- scan(text=tuners, what=character(), comment.char="#", quiet = TRUE)
-  acbench <- ACBench$new(exec_dir = exec_dir, install_dir = install_dir,
-    cluster = cluster, ncpus = ncpus)
-  acbench$save_setup(scenarios, tuners, reps)
+  list(scenarios = scenarios, tuners = tuners, reps = reps, exec_dir = exec_dir, install_dir = install_dir,
+  		 cluster = cluster, ncpus = ncpus)
+}
+
+read_setup_file <- function(file)
+{
+	x <- read_setup_file_helper(file)
+  acbench <- ACBench$new(exec_dir = x$exec_dir, install_dir = x$install_dir,
+    cluster = x$cluster, ncpus = x$ncpus)
+  acbench$save_setup(x$scenarios, x$tuners, x$reps)
   acbench
 }
 
@@ -463,8 +563,8 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
        collect_best_confs(self$exec_dir, scenarios = scenarios, file = file, verbose = verbose)
     },
     run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
-      self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
-        exec_dir = exec_dir, jobname = jobname)
+      jobID <- self$do_run(exe, args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
+              exec_dir = exec_dir, jobname = jobname)
     },
     
     run_irace_testing = function(exe, scenario_file, exec_dir, confs_file, jobname) {
@@ -503,8 +603,10 @@ ACBench <- R6::R6Class("ACBench", cloneable = TRUE, lock_class = TRUE, portable 
           exe <- get_tuner_executable(install_dir, tuner_name, tuner_version)
 	  scenario <- find_scenario(scenario_name, install_dir, tuner_name, tuner_version)
           cli_inform("running irace {.file {exe}} on scenario {scenario_name}, exec_dir ={.file {exec_dir}}, reps = {paste0(collapse=',', reps)}")
-          mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
+          jobIDs <- mapply(self$run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
             jobname = make_jobname(scenario_name, tuner_name, tuner_version, reps))
+          cat(paste0(jobIDs, collapse="\n"), append=TRUE, file = file.path(exec_dir, "jobs_running"))
+    
             #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
             #        future.label = paste0(tuner_name, "_", tuner_version, "-", scenario_name, "-%d"),
             #	  future.conditions = NULL)
