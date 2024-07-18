@@ -644,7 +644,7 @@ ACBench <- R6::R6Class("ACBench",
             exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
             jobname = make_jobname(scenario_name, tuner_name, tuner_version, reps)
           )
-          cat(paste0(jobIDs, collapse = "\n"), append = TRUE, file = file.path(exec_dir, "jobs_running"))
+          cat(jobIDs, sep = "\n", append = TRUE, file = file.path(exec_dir, "jobs_running"))
 
           #  future_mapply(run_irace, exe = exe, scenario_file = scenario, exec_dir = exec_dirs, run = reps,
           #        future.label = paste0(tuner_name, "_", tuner_version, "-", scenario_name, "-%d"),
