@@ -61,7 +61,13 @@ check_output_files <- function(exec_dir, scenarios, tuners, reps)
 					 }
 					 }
 }
- 
+
+do_status_check <- function(file)
+{
+s <- read_setup_file_helper(file)
+check_output_files(s$exec_dir, s$scenarios, s$tuners, s$reps)
+}
+
 find_scenario <- function(scenario_name, install_dir, tuner, version)
 {
   lib <- file.path(install_dir, paste0(tuner, "_", version))
