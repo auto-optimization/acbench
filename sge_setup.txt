@@ -13,7 +13,7 @@ tuners = "
 #irace:3.5
 irace:git-b7c46c76b8a83d65b6ce9a520c6f3f5799906c49  # v4
 "
-# reps = 10
-reps = c(4,10)
+#reps = 10
+reps = c(3,4,10)
 cluster = TRUE
 ncpus = 12

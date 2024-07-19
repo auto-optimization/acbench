@@ -595,7 +595,7 @@ ACBench <- R6::R6Class("ACBench",
       collect_best_confs(self$exec_dir, scenarios = scenarios, file = file, verbose = verbose)
     },
     run_irace = function(exe, scenario_file, exec_dir, run, jobname) {
-      jobID <- self$do_run(exe,
+      self$do_run(exe,
         args = get_irace_cmdline(scenario_file, exec_dir, seed = 42 + run, ncpus = self$ncpus),
         exec_dir = exec_dir, jobname = jobname
       )
@@ -669,19 +669,18 @@ ACBench <- R6::R6Class("ACBench",
         scenarios <- self$saved_setup$scenarios
       } # FIXME: Error handling.
 
-      for (scenario_name in scenarios) {
+      jobIDs <- sapply(scenarios, function(scenario_name) {
         jobname <- paste0("test-", scenario_name)
         test_exec_dir <- file.path(exec_dir, jobname)
-        if (!fs::file_exists(test_exec_dir)) {
+        if (!fs::file_exists(test_exec_dir))
           fs::dir_create(test_exec_dir)
-        }
         confs <- read_configurations(scenario_name, metadata = FALSE)
         confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
         write.table(confs, file = confs_file, row.names = FALSE)
-
-        scenario <- find_scenario(scenario_name, "irace", "git")
-        self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
-      }
+        scenario <- find_scenario(scenario_name, install_dir, "irace", "git")
+	self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
+      })
+      cat(jobIDs, sep = "\n", append = TRUE, file = file.path(exec_dir, "test_jobs_running"))
     }
   )
 )

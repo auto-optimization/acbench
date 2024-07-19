@@ -1,4 +1,4 @@
-source("common.R")
+source("acbench.R")
 # exec_dir <- "./execdir"
 setup_file <- "sge_setup.txt"
 acbench <- read_setup_file(setup_file)
