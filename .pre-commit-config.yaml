@@ -18,7 +18,7 @@ repos:
         args: [--cache-root=styler, --style_pkg=styler, --style_fun=tidyverse_style]    
     -   id: lintr
         args: [--warn_only]
-        verbose: false
+        verbose: true
 -   repo: https://github.com/pre-commit-ci/pre-commit-ci-config
     rev: v1.6.1
     hooks:
