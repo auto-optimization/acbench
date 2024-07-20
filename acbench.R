@@ -161,7 +161,7 @@ sge_run <- function(ncpus) {
     # cat("system2(", launch_file, ", args = c(", exe, paste0(collapse=",", args), "\n")
     # FIXME: Parse
     output <- processx::run(launch_file,
-      args = c(exe, args), echo_cmd = TRUE, echo = TRUE,
+      args = c(exe, args), echo_cmd = FALSE, echo = TRUE,
       error_on_status = TRUE, cleanup_tree = TRUE
     )
     # print(output)
