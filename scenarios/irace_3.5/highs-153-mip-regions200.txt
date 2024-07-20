@@ -50,4 +50,3 @@ capping = 1 # This is not needed for irace >= 3.5 but previous versions required
 
 ## END of scenario file
 ############################################################################
-

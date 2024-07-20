@@ -4,7 +4,3 @@ acotsp-tsp-rue-2000-default
 acoqap-qap-rs-00-default
 lkh-209-tsp-rue-2000
 highs-153-mip-regions200
-
-
-
-

@@ -23,5 +23,3 @@ Algorithm Configuration Benchmarks
  4. If you wish to run on a cluster, create a template similar to `launch_sge.tmpl`
  
    
-
-

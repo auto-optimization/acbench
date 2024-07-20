@@ -17,7 +17,15 @@ require_or_install(processx)
 require_or_install(withr)
 require_or_install(stringr)
 require_or_install(data.table)
-setDTthreads(threads = 1)
+require(remotes)
+require(R6)
+require(fs)
+require(cli)
+require(processx)
+require(withr)
+require(stringr)
+require(data.table)
+setDTthreads(threads = 2)
 ## Debugging:
 # require_or_install(debugme)
 # Sys.setenv(DEBUGME = "batchtools")
@@ -127,9 +135,10 @@ get_installed_irace <- function(install_dir, version) {
 
 get_tuner_executable <- function(install_dir, tool, version) {
   switch(tool,
-    "irace" = get_installed_irace(install_dir, version)
+    irace = get_installed_irace(install_dir, version)
   )
 }
+
 
 file_safe_delete <- function(path) {
   if (fs::file_exists(path)) {
@@ -516,6 +525,8 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 ## }
 
 read_setup_file_helper <- function(file) {
+  exec_dir <- NULL
+  reps <- 0L
   source(file)
   scenarios <- read_scenarios_file(text = scenarios)
   tuners <- scan(text = tuners, what = character(), comment.char = "#", quiet = TRUE)
@@ -672,13 +683,14 @@ ACBench <- R6::R6Class("ACBench",
       jobIDs <- sapply(scenarios, function(scenario_name) {
         jobname <- paste0("test-", scenario_name)
         test_exec_dir <- file.path(exec_dir, jobname)
-        if (!fs::file_exists(test_exec_dir))
+        if (!fs::file_exists(test_exec_dir)) {
           fs::dir_create(test_exec_dir)
+        }
         confs <- read_configurations(scenario_name, metadata = FALSE)
         confs_file <- file.path(test_exec_dir, paste0("confs-", scenario_name, ".txt"))
         write.table(confs, file = confs_file, row.names = FALSE)
         scenario <- find_scenario(scenario_name, install_dir, "irace", "git")
-	self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
+        self$run_irace_testing(exe = exe, scenario_file = scenario, exec_dir = test_exec_dir, confs_file = confs_file, jobname = jobname)
       })
       cat(jobIDs, sep = "\n", append = TRUE, file = file.path(exec_dir, "test_jobs_running"))
     }
@@ -686,14 +698,14 @@ ACBench <- R6::R6Class("ACBench",
 )
 
 #' Check status of experiments.
-#' 
+#'
 do_status_check <- function(file) {
   s <- read_setup_file_helper(file)
   check_output_files(s$exec_dir, s$scenarios, s$tuners, s$reps)
 }
 
 #' Read a setup file and initialize acbench.
-#' 
+#'
 read_setup_file <- function(file) {
   x <- read_setup_file_helper(file)
   acbench <- ACBench$new(
@@ -703,4 +715,3 @@ read_setup_file <- function(file) {
   acbench$save_setup(x$scenarios, x$tuners, x$reps)
   acbench
 }
-

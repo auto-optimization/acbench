@@ -40,11 +40,12 @@ if (!exists("interactive_plots")) interactive_plots <- base::interactive()
 # own reports.
 # ... modifies the `options` list: https://rstudio.github.io/DT/options.html
 show_table <- function(x, row.names = FALSE, search = FALSE, lengthMenu = NULL,
-                       searchHighlight = TRUE, dom='Blrtip', colorbar = NULL, style = list(),
-                       fixedColumns = NULL)
-{
+                       searchHighlight = TRUE, dom = "Blrtip", colorbar = NULL, style = list(),
+                       fixedColumns = NULL) {
   x <- as.data.frame(x)
-  if (!interactive_plots) return(knitr::kable(x, row.names = row.names))
+  if (!interactive_plots) {
+    return(knitr::kable(x, row.names = row.names))
+  }
 
   if (search) dom <- sub("r", "fr", dom, fixed = TRUE)
   if (is.null(lengthMenu)) {
@@ -53,61 +54,76 @@ show_table <- function(x, row.names = FALSE, search = FALSE, lengthMenu = NULL,
     pageLength <- lengthMenu[1]
     if (nrow(x) <= pageLength) dom <- gsub("[lip]", "", dom) # autoHideNavigation
   }
-  columnDefs <- list(list(className = 'dt-right', targets = "_all"))
-  extensions <- c('Buttons', 'KeyTable')
-  options <- list(keys = TRUE,
-                  searchHighlight = search,
-                  scrollX = TRUE,
-                  pageLength=pageLength,
-                  lengthMenu = lengthMenu,
-                  dom = dom,
-                  buttons = c('copy', 'csv'), #, 'colvis'),
-                  columnDefs = columnDefs)
+  columnDefs <- list(list(className = "dt-right", targets = "_all"))
+  extensions <- c("Buttons", "KeyTable")
+  options <- list(
+    keys = TRUE,
+    searchHighlight = search,
+    scrollX = TRUE,
+    pageLength = pageLength,
+    lengthMenu = lengthMenu,
+    dom = dom,
+    buttons = c("copy", "csv"), # , 'colvis'),
+    columnDefs = columnDefs
+  )
   if (!is.null(fixedColumns)) {
-    extensions <- c(extensions, 'FixedColumns')
+    extensions <- c(extensions, "FixedColumns")
     options$fixedColumns <- fixedColumns
   }
-  
-  tab <- DT::datatable(x, rownames = row.names,
-                       class = 'compact row-border hover',
-                       autoHideNavigation = TRUE,
-                       extensions = extensions,
-                       options = options) %>% DT::formatStyle(colnames(x), fontSize='85%')
+
+  tab <- DT::datatable(x,
+    rownames = row.names,
+    class = "compact row-border hover",
+    autoHideNavigation = TRUE,
+    extensions = extensions,
+    options = options
+  ) %>% DT::formatStyle(colnames(x), fontSize = "85%")
   for (col in colorbar) {
-    if(!(col %in% colnames(x)))
-      stop("Column ", col, " not found in table: ", paste0(colnames(x), collapse=", "))
+    if (!(col %in% colnames(x))) {
+      stop("Column ", col, " not found in table: ", paste0(colnames(x), collapse = ", "))
+    }
     if (all(is.na(x[, col]))) next # Don't add colorbar if all are NA.
     if (!is.numeric(x[, col])) next # Don't add colorbar unless is a numerical column
-    tab <- DT::formatStyle(tab, columns = col,
-                           background = DT::styleColorBar(range(x[, col], na.rm=TRUE), 'lightblue'),
-                           backgroundSize = '98% 88%',
-                           backgroundRepeat = 'no-repeat',
-                           backgroundPosition = 'center')
+    tab <- DT::formatStyle(tab,
+      columns = col,
+      background = DT::styleColorBar(range(x[, col], na.rm = TRUE), "lightblue"),
+      backgroundSize = "98% 88%",
+      backgroundRepeat = "no-repeat",
+      backgroundPosition = "center"
+    )
   }
   for (s in style) {
-    tab <- do.call(DT::formatStyle, c(table=tab, s))
+    tab <- do.call(DT::formatStyle, c(table = tab, s))
   }
   tab
 }
 
 git_rev_parse_short <- function(versions) {
   shas <- unique(versions)
-  shas <- sapply(strsplit(shas[grepl("_git-", shas, fixed=TRUE)],
-    "_git-", fixed=TRUE), function(x) x[2L])
-  if (length(shas) == 0L) return(versions)
-  maxl <- min(nchar(shas))
-  if (maxl <= 4L) return(versions)
-  for (l in seq(4L,maxl)) {
-    short_shas <- substr(shas, 1L, l)
-    if (anyDuplicated(short_shas) == 0L)
-      break
+  shas <- sapply(strsplit(grepl("_git-", shas, fixed = TRUE, value = TRUE),
+    "_git-",
+    fixed = TRUE
+  ), function(x) x[2L])
+  if (length(shas) == 0L) {
+    return(versions)
   }
-  stringi::stri_replace_all_fixed(versions, shas, short_shas, vectorize_all=FALSE)
+  maxl <- min(nchar(shas))
+  if (maxl <= 4L) {
+    return(versions)
+  }
+  for (l in seq(4L, maxl)) {
+    short_shas <- substr(shas, 1L, l)
+    if (anyDuplicated(short_shas) == 0L) {
+      break
+    }
+  }
+  stringi::stri_replace_all_fixed(versions, shas, short_shas, vectorize_all = FALSE)
 }
 
 readRDS_safe <- function(filename) {
-  if (!fs::file_exists(filename))
+  if (!fs::file_exists(filename)) {
     cli_abort("'{.file {filename}} does not exist")
+  }
   readRDS(filename)
 }
 
@@ -115,11 +131,12 @@ dt <- readRDS_safe(file.path(path, "train_results.rds"))
 dt$tuner <- git_rev_parse_short(dt$tuner)
 
 # TODO, exclude columns like rep.
-my_summary <- function(x) list(mean=mean(x), sd=sd(x))
-train_summary <- dt[, as.list(unlist(lapply(.SD, length))), by = c("scenario", "tuner"), .SDcols="rep"]
+my_summary <- function(x) list(mean = mean(x), sd = sd(x))
+train_summary <- dt[, as.list(unlist(lapply(.SD, length))), by = c("scenario", "tuner"), .SDcols = "rep"]
 train_summary <- train_summary[
   dt[, as.list(unlist(lapply(.SD, my_summary))), by = c("scenario", "tuner"), .SDcols = setdiff(colnames(dt), c("scenario", "tuner", "rep"))],
-  on = c("scenario", "tuner")]
+  on = c("scenario", "tuner")
+]
 
 test_res <- readRDS_safe(file.path(path, "test_results.rds"))
 test_res <- lapply(test_res, function(x) set(x, j = "tuner", value = git_rev_parse_short(x[["tuner"]])))
@@ -128,28 +145,36 @@ test_res <- lapply(test_res, function(x) set(x, j = "tuner", value = git_rev_par
 # Training results
 
 ```{r train_summary,fig.align="center", echo=FALSE}
-show_table(train_summary, lengthMenu = c(20, 50, 100), search = TRUE,
-           colorbar = colnames(train_summary), fixedColumns = list(leftColumns = 2)) %>%
-  DT::formatStyle("scenario","white-space"="nowrap")
+show_table(train_summary,
+  lengthMenu = c(20, 50, 100), search = TRUE,
+  colorbar = colnames(train_summary), fixedColumns = list(leftColumns = 2)
+) %>%
+  DT::formatStyle("scenario", "white-space" = "nowrap")
 ```
 
 ## Boxplots
 
 ```{r, results='asis',fig.align="center",out.width="100%" }
-setnames(dt, c("n_iterations", "n_instances",  "n_experiments", "time_targetrunner",
-  "time_cpu_total","time_wallclock"),
-  c("Num. iterations", "Num. instances",  "Num. experiments", "targetRunner time (s)",
-    "Total CPU time (s)","Total Wallclock time (s)"), skip_absent = TRUE)
+setnames(dt, c(
+  "n_iterations", "n_instances", "n_experiments", "time_targetrunner",
+  "time_cpu_total", "time_wallclock"
+),
+c(
+  "Num. iterations", "Num. instances", "Num. experiments", "targetRunner time (s)",
+  "Total CPU time (s)", "Total Wallclock time (s)"
+),
+skip_absent = TRUE
+)
 id_vars <- c("scenario", "tuner", "rep")
 num_cols <- setdiff(colnames(dt), id_vars)
-dt[, (num_cols):=lapply(.SD, as.numeric), .SDcols=num_cols]
+dt[, (num_cols) := lapply(.SD, as.numeric), .SDcols = num_cols]
 for (col in num_cols) {
-  cat('###',col,' \n')
-  p <- ggplot(dt, aes(x=.data[[col]], y=scenario, fill=tuner)) +
-    geom_boxplot() + 
-    theme(legend.position="bottom", legend.text=element_text(size=rel(0.8)))
+  cat("###", col, " \n")
+  p <- ggplot(dt, aes(x = .data[[col]], y = scenario, fill = tuner)) +
+    geom_boxplot() +
+    theme(legend.position = "bottom", legend.text = element_text(size = rel(0.8)))
   print(p)
-  cat('\n\n')
+  cat("\n\n")
 }
 ```
 
@@ -157,24 +182,29 @@ for (col in num_cols) {
 
 ```{r test_summary,fig.align="center", echo=FALSE}
 tabcost <- rbindlist(lapply(test_res, `[`, j = c("scenario", "tuner", "rep", "cost", "instance"), with = FALSE))
-tabcost[, rank_cost := rank(cost), by= list(scenario, instance)]
-tabsum <- tabcost[, list(cost_mean = mean(cost), cost_sd = sd(cost),
-                         cost_mean_rank = mean(rank_cost), cost_sd_rank = sd(rank_cost)),
-                  by=list(scenario, tuner)]
+tabcost[, rank_cost := rank(cost), by = list(scenario, instance)]
+tabsum <- tabcost[, list(
+  cost_mean = mean(cost), cost_sd = sd(cost),
+  cost_mean_rank = mean(rank_cost), cost_sd_rank = sd(rank_cost)
+),
+by = list(scenario, tuner)
+]
 show_table(tabsum, lengthMenu = c(20, 50, 100), colorbar = colnames(tabsum), search = TRUE)
 ```
 
 ## Boxplot 
 ```{r test-boxplot,fig.align="center", out.width="100%", echo=FALSE}
-ggplot(tabcost, aes(x=cost, y=tuner)) + 
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) + facet_wrap(~scenario, scales="free_x")
+ggplot(tabcost, aes(x = cost, y = tuner)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~scenario, scales = "free_x")
 ```
 
 ## Boxplot (by ranks)
 
 ```{r test-boxplot-ranks,fig.align="center", out.width="100%", echo=FALSE}
-ggplot(tabcost, aes(x=cost, y=tuner)) + 
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) + facet_wrap(~scenario, scales="free_x")
+ggplot(tabcost, aes(x = cost, y = tuner)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~scenario, scales = "free_x")
 ```
 
 ## Test results per repetition
@@ -184,8 +214,8 @@ for (scenario in names(test_res)) {
   res <- test_res[[scenario]]
   res$rep <- as.factor(res$rep)
   cat(sprintf("\n\n### Scenario `%s` \n\n", scenario))
-  print(ggplot(res, aes(x=tuner, y=cost, color=rep)) + geom_violin(draw_quantiles = c(0.25, 0.5, 0.75))) #+ geom_jitter(alpha=.75))
-        #position = position_jitter(seed = 1, width = 0.2), alpha=0.75) + theme(legend.position = "none"))
+  print(ggplot(res, aes(x = tuner, y = cost, color = rep)) +
+    geom_violin(draw_quantiles = c(0.25, 0.5, 0.75))) #+ geom_jitter(alpha=.75))
+  # position = position_jitter(seed = 1, width = 0.2), alpha=0.75) + theme(legend.position = "none"))
 }
 ```
-

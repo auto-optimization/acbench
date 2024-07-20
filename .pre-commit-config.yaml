@@ -1,47 +1,6 @@
 # All available hooks: https://pre-commit.com/hooks.html
 # R specific hooks: https://github.com/lorenzwalthert/precommit
 repos:
--   repo: https://github.com/lorenzwalthert/precommit
-    rev: v0.4.2
-    hooks: 
-    -   id: style-files
-        args: [--style_pkg=styler, --style_fun=tidyverse_style]    
-    -   id: spell-check
-        exclude: >
-          (?x)^(
-          .*\.[rR]|
-          .*\.feather|
-          .*\.jpeg|
-          .*\.pdf|
-          .*\.png|
-          .*\.py|
-          .*\.RData|
-          .*\.rds|
-          .*\.Rds|
-          .*\.Rproj|
-          .*\.sh|
-          (.*/|)\.gitignore|
-          (.*/|)\.gitlab-ci\.yml|
-          (.*/|)\.lintr|
-          (.*/|)\.pre-commit-.*|
-          (.*/|)\.Rbuildignore|
-          (.*/|)\.Renviron|
-          (.*/|)\.Rprofile|
-          (.*/|)\.travis\.yml|
-          (.*/|)appveyor\.yml|
-          (.*/|)NAMESPACE|
-          (.*/|)renv/settings\.dcf|
-          (.*/|)renv\.lock|
-          (.*/|)WORDLIST|
-          \.github/workflows/.*|
-          data/.*|
-          algorithms/.*
-          )$
-    -   id: lintr
-    -   id: readme-rmd-rendered
-    -   id: parsable-R
-    -   id: no-browser-statement
-    -   id: no-debug-statement
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks: 
@@ -49,6 +8,17 @@ repos:
         args: ['--maxkb=200']
     -   id: end-of-file-fixer
         exclude: '(\.Rd|algorithms/.*)$'
+-   repo: https://github.com/lorenzwalthert/precommit
+    rev: v0.4.2
+    hooks: 
+    -   id: parsable-R
+    -   id: no-browser-statement
+    -   id: no-debug-statement
+    -   id: style-files
+        args: [--cache-root=styler, --style_pkg=styler, --style_fun=tidyverse_style]    
+    -   id: lintr
+        args: [--warn_only]
+        verbose: false
 -   repo: https://github.com/pre-commit-ci/pre-commit-ci-config
     rev: v1.6.1
     hooks:

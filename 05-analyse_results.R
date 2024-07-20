@@ -1,2 +1,2 @@
 source("acbench.R")
-report(path="./")
+report(path = "./")

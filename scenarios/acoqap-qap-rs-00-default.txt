@@ -29,4 +29,3 @@ configurationsFile = "../algorithms/acotspqap/acoqap-default.txt"
 
 ## END of scenario file
 ############################################################################
-
