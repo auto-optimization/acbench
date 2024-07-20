@@ -35,6 +35,7 @@ repos:
           (.*/|)WORDLIST|
           \.github/workflows/.*|
           data/.*|
+          algorithms/.*
           )$
     -   id: lintr
     -   id: readme-rmd-rendered
@@ -47,7 +48,7 @@ repos:
     -   id: check-added-large-files
         args: ['--maxkb=200']
     -   id: end-of-file-fixer
-        exclude: '\.Rd'
+        exclude: '(\.Rd|algorithms/.*)$'
 -   repo: https://github.com/pre-commit-ci/pre-commit-ci-config
     rev: v1.6.1
     hooks:
@@ -60,7 +61,7 @@ repos:
         entry: Cannot commit .Rhistory, .RData, .Rds or .rds.
         language: fail
         files: '\.(Rhistory|RData|Rds|rds)$'
-        # `exclude: <regex>` to allow committing specific files
-
+        exclude: '^(best_confs|test_results|train_results)\.rds$'
+        
 ci:
     autoupdate_schedule: monthly
