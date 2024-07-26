@@ -1,9 +1,9 @@
 scenarios = "
-# acotsp-tsp-rue-2000
-# acoqap-qap-rs-00
-# acotsp-tsp-rue-2000-default
-# acoqap-qap-rs-00-default
-# lkh-209-tsp-rue-2000
+acotsp-tsp-rue-2000
+acoqap-qap-rs-00
+acotsp-tsp-rue-2000-default
+acoqap-qap-rs-00-default
+lkh-209-tsp-rue-2000
 highs-153-mip-regions200
 "
 exec_dir = "~/scratch/execdir"
@@ -11,9 +11,9 @@ install_dir = "~/scratch/install/"
 tuners = "
 #irace:3.4
 #irace:3.5
-irace:git-b7c46c76b8a83d65b6ce9a520c6f3f5799906c49  # v4
+#irace:git-d201bd1f9c5ee8dc46408a47f3b6d1410bad284e # v4
+irace:git-103baf7b5ac9bac849de0b3f8399a3c2fc59deaf # v4
 "
-#reps = 10
-reps = c(3,4,10)
+reps = 10
 cluster = TRUE
 ncpus = 12
