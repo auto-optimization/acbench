@@ -36,7 +36,7 @@ setDTthreads(threads = 2)
 
 source("setups.R")
 
-check_output_files <- function(exec_dir, scenarios, tuners, reps) {
+check_output_files <- function(exec_dir, scenarios, tuners, reps, exclude) {
   check_file_nonzero <- function(f) {
     if (!fs::file_exists(f)) {
       cli_warn("{.file {f}} does not exist!")
@@ -56,6 +56,10 @@ check_output_files <- function(exec_dir, scenarios, tuners, reps) {
     reps <- seq_len(reps)
   }
 
+  if (length(exclude) > 0) {
+    exclude <- fixed(exclude)
+    print(exclude)
+  }
   for (scenario_name in scenarios) {
     for (tuner in tuners) {
       tuner <- strsplit(tuner, ":")[[1L]]
@@ -63,6 +67,7 @@ check_output_files <- function(exec_dir, scenarios, tuners, reps) {
       tuner_name <- tuner[1L]
       for (r in reps) {
         d <- make_execdir_name(exec_dir, scenario_name, tuner_name, tuner_version, r)
+	if (length(exclude) > 0 && any(str_detect(d, exclude))) next
         check_file_zero(file.path(d, "stderr.txt"))
         check_file_nonzero(file.path(d, "stdout.txt"))
         check_file_nonzero(file.path(d, "irace.Rdata"))
@@ -180,7 +185,7 @@ sge_run <- function(ncpus) {
       cli_abort("Cannot parse jobID from:\n", output$stdout)
     }
     fs::file_delete(launch_file)
-    paste0(jobID, " ", jobname)
+    paste0(jobID, " \"", exec_dir, "\"")
   }
 }
 
@@ -697,11 +702,26 @@ ACBench <- R6::R6Class("ACBench",
   )
 )
 
+get_running_jobs <- function(exec_dir)
+{
+  filename <- file.path(exec_dir, "jobs_running")
+  x <- read.table(filename, header=FALSE)
+  running <- sapply(x$V1, function(id) {
+      system2("qstat", args=c("-j", id), stdout=FALSE, stderr=FALSE) == 0
+  })
+  x <- x[running, , drop=FALSE]
+  write.table(x, file = filename, col.names=FALSE, row.names=FALSE)
+  cat("Still running:\n")
+  print(x)
+  x[["V2"]]
+}
+
 #' Check status of experiments.
 #'
 do_status_check <- function(file) {
   s <- read_setup_file_helper(file)
-  check_output_files(s$exec_dir, s$scenarios, s$tuners, s$reps)
+  exclude <- get_running_jobs(s$exec_dir)
+  check_output_files(s$exec_dir, s$scenarios, s$tuners, s$reps, exclude)
 }
 
 #' Read a setup file and initialize acbench.
