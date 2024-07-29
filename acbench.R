@@ -250,7 +250,7 @@ read_configurations <- function(scenario_name, file = "best_confs.rds", metadata
 
 read_scenarios_file <- function(file = "", text) {
   if (missing(file) && !missing(text)) {
-    return(scan(text = scenarios, what = character(), comment.char = "#", quiet = TRUE))
+    return(scan(text = text, what = character(), comment.char = "#", quiet = TRUE))
   }
   scan(file, what = character(), strip.white = TRUE, comment.char = "#", quiet = TRUE)
 }
@@ -530,9 +530,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
 ## }
 
 read_setup_file_helper <- function(file) {
-  exec_dir <- NULL
-  reps <- 0L
-  source(file)
+  source(file, local=TRUE, keep.source=FALSE)
   scenarios <- read_scenarios_file(text = scenarios)
   tuners <- scan(text = tuners, what = character(), comment.char = "#", quiet = TRUE)
   list(
