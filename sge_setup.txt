@@ -11,9 +11,9 @@ install_dir = "~/scratch/install/"
 tuners = "
 #irace:3.4
 #irace:3.5
-#irace:git-d201bd1f9c5ee8dc46408a47f3b6d1410bad284e # v4
-irace:git-103baf7b5ac9bac849de0b3f8399a3c2fc59deaf # v4
+irace:git-d006649a3736b04c70dd12d13886c0ebde72722e
 "
 reps = 10
+#reps = c(6,10)
 cluster = TRUE
 ncpus = 12
