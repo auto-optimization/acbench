@@ -421,12 +421,9 @@ sge_list_jobs <- function() {
 # }
 #
 
-collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds", verbose = FALSE) {
-  results <- sapply(scenarios, function(scenario_name) {
-    scenario_path <- file.path(exec_dir, scenario_name)
-    paths <- fs::dir_ls(scenario_path, type = "directory")
-    tuner <- sub("-[0-9]+$", "", fs::path_rel(paths, start = scenario_path), perl = TRUE)
-    reps <- as.integer(sub("^.+-([0-9]+)$", "\\1", paths, perl = TRUE))
+parse_reps_from_filename <- function(scenario_name, paths, tuner, verbose)
+{
+   reps <- as.integer(sub("^.+-([0-9]+)$", "\\1", paths, perl = TRUE))
     if (verbose) {
       for (x in unique(tuner)) {
         cat(sprintf(
@@ -435,6 +432,15 @@ collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds
         ))
       }
     }
+   reps
+}
+
+collect_train_results <- function(exec_dir, scenarios, file = "train_results.rds", verbose = FALSE) {
+  results <- sapply(scenarios, function(scenario_name) {
+    scenario_path <- file.path(exec_dir, scenario_name)
+    paths <- fs::dir_ls(scenario_path, type = "directory")
+    tuner <- sub("-[0-9]+$", "", fs::path_rel(paths, start = scenario_path), perl = TRUE)
+    reps <- parse_reps_from_filename(scenario_name, paths, tuner, verbose)
     summaries <- lapply(paths, get_train_summary)
     res <- data.table::rbindlist(summaries)
     cbind(
@@ -470,15 +476,7 @@ collect_best_confs <- function(exec_dir, scenarios, file = "best_confs.rds", ver
     scenario_path <- file.path(exec_dir, scenario_name)
     paths <- fs::dir_ls(scenario_path, type = "directory")
     tuner <- sub("-[0-9]+$", "", fs::path_rel(paths, start = scenario_path), perl = TRUE)
-    reps <- as.integer(sub("^.+-([0-9]+)$", "\\1", paths, perl = TRUE))
-    if (verbose) {
-      for (x in unique(tuner)) {
-        cat(sprintf(
-          "%s: %s: %s\n", scenario_name, x,
-          paste0(collapse = ", ", reps[x == tuner])
-        ))
-      }
-    }
+    reps <- parse_reps_from_filename(scenario_name, paths, tuner, verbose)
     results <- lapply(paths, get_best_configuration)
     names(results) <- NULL
     results <- data.table(
@@ -709,6 +707,10 @@ get_running_jobs <- function(exec_dir)
   })
   x <- x[running, , drop=FALSE]
   write.table(x, file = filename, col.names=FALSE, row.names=FALSE)
+  if (nrow(x) == 0) {
+    cat("Nothing running\n")
+    return(NULL)
+  }
   cat("Still running:\n")
   print(x)
   x[["V2"]]
